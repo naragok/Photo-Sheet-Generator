@@ -1,0 +1,2256 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>토목 현장 사진대지 작성 프로그램</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- EXIF JS for reading photo metadata -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exif-js/2.3.0/exif.min.js"></script>
+    <!-- SortableJS for drag-and-drop reordering -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+    <!-- ExcelJS for generating formatted Excel files with embedded photos -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+    <!-- Google Fonts Noto Sans KR -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #f8fafc;
+        }
+
+        /* Standard A4 Print Stylesheet */
+        @page {
+            size: A4 portrait;
+            margin: 8mm 8mm 8mm 8mm;
+        }
+
+        @media print {
+            html, body {
+                width: 210mm;
+                height: 297mm;
+                background: #ffffff !important;
+                color: #000000 !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                color-adjust: exact !important;
+            }
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                color-adjust: exact !important;
+            }
+            .no-print, div.no-print, span.no-print {
+                display: none !important;
+            }
+            .print-only, div.print-only {
+                display: block !important;
+            }
+            .a4-page {
+                width: 194mm !important;
+                height: 280mm !important;
+                max-height: 280mm !important;
+                box-shadow: none !important;
+                margin: 0 auto !important;
+                padding: 2mm 0 !important;
+                page-break-after: always !important;
+                break-after: page !important;
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+                border: none !important;
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: space-between !important;
+                box-sizing: border-box !important;
+                overflow: hidden !important;
+            }
+            .a4-page:last-child {
+                page-break-after: auto !important;
+                break-after: auto !important;
+            }
+            .photo-card-block {
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: space-between !important;
+                flex: 1 1 0% !important;
+                min-height: 0 !important;
+            }
+            .photo-img-container {
+                flex: 1 1 0% !important;
+                min-height: 0 !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+            }
+            .photo-card-table {
+                border-collapse: collapse !important;
+                flex-shrink: 0 !important;
+            }
+            .photo-card-table th, .photo-card-table td {
+                border: 1.5px solid #000000 !important;
+                color: #000000 !important;
+            }
+            input, textarea {
+                border: none !important;
+                background: transparent !important;
+                resize: none !important;
+                outline: none !important;
+                color: #000000 !important;
+                box-shadow: none !important;
+            }
+            .photo-badge-tag {
+                background-color: #dc2626 !important;
+                color: #ffffff !important;
+                border: 1px solid #ffffff !important;
+            }
+            /* 화면용 좌/우 2열 그리드를 인쇄시 해제하여 빈 페이지 방지 */
+            .photo-sheets-grid {
+                display: block !important;
+            }
+            .empty-state-msg {
+                display: none !important;
+            }
+            main {
+                padding: 0 !important;
+                gap: 0 !important;
+            }
+            main > div {
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+        }
+
+        /* Screen A4 Preview page styling */
+        .a4-preview-page {
+            width: 210mm;
+            height: 297mm;
+            min-height: 297mm;
+            max-height: 297mm;
+            background: white;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+            margin: 0 0 24px 0;
+            padding: 8mm 10mm 8mm 10mm;
+            box-sizing: border-box;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow: hidden;
+        }
+
+        /* 좌/우 2페이지 나란히 보기 (화면 전용, 인쇄시 미적용) */
+        .photo-sheets-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 210mm);
+            gap: 20px 16px;
+            justify-content: center;
+            align-items: start;
+        }
+        @media (max-width: 1500px) {
+            .photo-sheets-grid {
+                grid-template-columns: 1fr;
+                justify-items: center;
+            }
+            .photo-sheets-grid .a4-preview-page {
+                margin: 0 auto 24px auto;
+            }
+        }
+        .photo-sheets-grid .empty-state-msg {
+            grid-column: 1 / -1;
+        }
+
+        /* Photo card layout structure fixes */
+        .photo-card-block {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            flex: 1 1 0%;
+            min-height: 0;
+            contain: layout style;
+        }
+
+        .photo-img-container {
+            flex: 1 1 0%;
+            min-height: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .photo-card-table {
+            flex-shrink: 0;
+            width: 100%;
+        }
+
+        .photo-card-block img {
+            will-change: transform;
+            content-visibility: auto;
+        }
+
+        /* Canvas drawing mode styles */
+        #annotationCanvas {
+            cursor: crosshair;
+            touch-action: none;
+        }
+
+        /* Tool button active state */
+        .tool-btn.active {
+            background-color: #f59e0b !important;
+            color: #ffffff !important;
+            border-color: #d97706 !important;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Swatch active state */
+        .color-swatch.active {
+            ring: 3px #f59e0b;
+            transform: scale(1.15);
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 7px;
+            height: 7px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        /* Collapsible transitions */
+        .dashboard-content {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            max-height: 1000px;
+            opacity: 1;
+            overflow: hidden;
+        }
+        .dashboard-content.collapsed {
+            max-height: 0 !important;
+            opacity: 0;
+            margin-top: 0 !important;
+            margin-bottom: 0 !important;
+            padding-top: 0 !important;
+            padding-bottom: 0 !important;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen text-slate-800 flex flex-col">
+
+    <!-- Header Navigation -->
+    <header class="bg-slate-900 text-white shadow-lg sticky top-0 z-40 no-print border-b border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 py-2.5 flex flex-wrap items-center justify-between gap-3">
+            
+            <!-- Brand Info -->
+            <div class="flex items-center space-x-3">
+                <div class="bg-gradient-to-br from-amber-400 to-amber-600 text-slate-950 p-2.5 rounded-xl font-bold shadow-md shadow-amber-500/20 flex items-center justify-center">
+                    <i class="fa-solid fa-helmet-safety text-2xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-black text-lg leading-tight flex items-center gap-2 text-slate-100 tracking-tight">
+                        토목 현장 사진대지 작성기
+                        <span class="text-[10px] bg-amber-500/20 text-amber-400 border border-amber-500/40 px-2 py-0.5 rounded-full font-bold tracking-wider uppercase">Pro Standard</span>
+                    </h1>
+                    <p class="text-[11px] text-slate-400 font-medium">Civil Engineering Site Photo Sheet Generator</p>
+                </div>
+            </div>
+
+            <!-- Global Action Controls -->
+            <div class="flex items-center space-x-2 flex-wrap gap-2">
+                <!-- Group 1: Manage -->
+                <div class="flex items-center bg-slate-800/90 p-1 rounded-xl border border-slate-700/70 space-x-1 shadow-inner">
+                    <button onclick="loadSampleData()" title="샘플 데이터 로드" class="px-2.5 py-1.5 bg-slate-700/80 hover:bg-slate-600 text-xs font-semibold rounded-lg transition flex items-center gap-1.5 text-slate-200">
+                        <i class="fa-solid fa-vial text-amber-400"></i> <span class="hidden sm:inline">예제</span>
+                    </button>
+                    <button onclick="toggleProjectStorePanel()" title="현장별 저장함 열기" class="px-2.5 py-1.5 bg-slate-700/80 hover:bg-slate-600 text-xs font-semibold rounded-lg transition flex items-center gap-1.5 text-slate-200">
+                        <i class="fa-solid fa-box-archive text-purple-400"></i> <span class="hidden sm:inline">저장함</span>
+                    </button>
+                    <button onclick="saveToProjectStore()" title="현재 작업을 저장함에 저장" class="px-2.5 py-1.5 bg-slate-700/80 hover:bg-slate-600 text-xs font-semibold rounded-lg transition flex items-center gap-1.5 text-slate-200">
+                        <i class="fa-solid fa-floppy-disk text-purple-300"></i> <span class="hidden sm:inline">저장</span>
+                    </button>
+                    <button onclick="exportJSON()" title="데이터 JSON 백업" class="px-2.5 py-1.5 bg-slate-700/80 hover:bg-slate-600 text-xs font-semibold rounded-lg transition flex items-center gap-1.5 text-slate-200">
+                        <i class="fa-solid fa-download text-blue-400"></i> 백업
+                    </button>
+                    <label class="px-2.5 py-1.5 bg-slate-700/80 hover:bg-slate-600 text-xs font-semibold rounded-lg transition flex items-center gap-1.5 text-slate-200 cursor-pointer">
+                        <i class="fa-solid fa-upload text-emerald-400"></i> 복원
+                        <input type="file" id="jsonInput" accept=".json" class="hidden" onchange="importJSON(event)">
+                    </label>
+                </div>
+
+                <!-- Group 2: Output / Actions -->
+                <div class="flex items-center bg-slate-800/90 p-1 rounded-xl border border-slate-700/70 space-x-1 shadow-inner">
+                    <button onclick="triggerFileInput()" class="px-3 py-1.5 bg-amber-600 hover:bg-amber-500 text-xs font-bold text-white rounded-lg transition flex items-center gap-1.5 shadow-sm">
+                        <i class="fa-solid fa-plus"></i> 사진 추가
+                    </button>
+                    <button onclick="exportHTML()" class="px-2.5 py-1.5 bg-emerald-700 hover:bg-emerald-600 text-xs font-semibold text-white rounded-lg transition flex items-center gap-1.5 shadow-sm">
+                        <i class="fa-solid fa-file-code"></i> HTML
+                    </button>
+                    <button onclick="exportExcel()" class="px-2.5 py-1.5 bg-green-700 hover:bg-green-600 text-xs font-semibold text-white rounded-lg transition flex items-center gap-1.5 shadow-sm">
+                        <i class="fa-solid fa-file-excel"></i> 엑셀
+                    </button>
+                </div>
+
+                <!-- Primary Print Action -->
+                <button onclick="window.print()" class="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white rounded-xl shadow-md hover:shadow-blue-500/25 transition flex items-center gap-1.5 border border-blue-400/40">
+                    <i class="fa-solid fa-print text-sm"></i> 인쇄 / PDF
+                </button>
+
+                <!-- Dashboard Collapse Toggle -->
+                <button onclick="toggleDashboard()" id="dashboardToggleBtn" title="상단 설정창 접기/펼치기" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl border border-slate-700 text-xs font-semibold transition flex items-center gap-1.5">
+                    <span class="hidden sm:inline" id="toggleLabel">설정</span>
+                    <i class="fa-solid fa-chevron-down" id="toggleIcon"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hidden Image Input -->
+    <input type="file" id="imageInput" multiple accept="image/*" class="hidden" onchange="handleImageUpload(event)">
+
+    <!-- Main Content Area -->
+    <main class="flex-1 max-w-[1800px] w-full mx-auto p-4 flex flex-col gap-5 items-center">
+
+        <!-- Top Controls Dashboard Menu -->
+        <div id="dashboardMenu" class="dashboard-content collapsed w-full no-print sticky z-30 bg-slate-50/95 backdrop-blur-sm pt-3 -mt-1">
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                
+                <!-- Card 1: Photo Upload & Quick Actions -->
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200/80 flex flex-col justify-between hover:shadow-md transition-shadow">
+                    <div>
+                        <div class="flex items-center justify-between mb-3 border-b border-slate-100 pb-2.5">
+                            <h2 class="text-xs font-extrabold uppercase tracking-wider text-slate-700 flex items-center gap-2">
+                                <span class="w-6 h-6 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center text-xs">
+                                    <i class="fa-solid fa-images"></i>
+                                </span>
+                                사진 등록 및 관리
+                            </h2>
+                            <span id="photoCountText" class="text-[11px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-full">
+                                총 0장 / 0페이지
+                            </span>
+                        </div>
+
+                        <!-- Dropzone Area -->
+                        <div id="dropZone" 
+                             onclick="triggerFileInput()"
+                             class="border-2 border-dashed border-slate-300 hover:border-amber-500 bg-slate-50/70 hover:bg-amber-50/50 p-4 rounded-xl text-center cursor-pointer transition-all duration-200 group flex flex-col items-center justify-center gap-1.5 shadow-inner">
+                            <div class="w-10 h-10 rounded-full bg-amber-100 group-hover:bg-amber-500 text-amber-600 group-hover:text-white flex items-center justify-center transition-all duration-200 shadow-sm">
+                                <i class="fa-solid fa-cloud-arrow-up text-lg"></i>
+                            </div>
+                            <p class="text-xs font-bold text-slate-700 group-hover:text-amber-800">사진 파일 추가 (클릭 또는 드래그)</p>
+                            <p class="text-[10px] text-slate-400 font-medium">JPG, PNG, WEBP 지원 (EXIF 촬영날짜 자동 파싱) · Ctrl+V 붙여넣기 가능</p>
+                        </div>
+                    </div>
+
+                    <div class="pt-3 border-t border-slate-100 mt-3 flex items-center justify-between">
+                        <button onclick="triggerFileInput()" class="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-lg transition shadow-sm flex items-center gap-1.5">
+                            <i class="fa-solid fa-folder-open"></i> 탐색기에서 선택
+                        </button>
+                        <button onclick="openClearConfirmModal()" class="text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 px-2.5 py-1.5 rounded-lg transition font-semibold flex items-center gap-1 border border-rose-200">
+                            <i class="fa-solid fa-trash-can"></i> 전체 삭제
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Card 2: Site Info & Page Layout Options -->
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200/80 hover:shadow-md transition-shadow">
+                    <div class="flex items-center justify-between mb-3 border-b border-slate-100 pb-2.5">
+                        <h2 class="text-xs font-extrabold uppercase tracking-wider text-slate-700 flex items-center gap-2">
+                            <span class="w-6 h-6 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center text-xs">
+                                <i class="fa-solid fa-sliders"></i>
+                            </span>
+                            현장 정보 및 서식 설정
+                        </h2>
+                        <span class="text-[10px] font-bold text-blue-600 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full">Layout</span>
+                    </div>
+                    
+                    <div class="space-y-2.5 text-xs">
+                        <div>
+                            <label class="block font-bold text-slate-700 mb-1">현장명</label>
+                            <input type="text" id="globalSiteName" value="원주 캠프롱 문화체육공원 조성사업(조경, 토목)" 
+                                oninput="updateGlobalInfo()" 
+                                class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 outline-none font-semibold text-xs transition bg-slate-50/50 focus:bg-white">
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <div class="flex items-center justify-between mb-1">
+                                    <label class="font-bold text-slate-700">작성자</label>
+                                    <label class="inline-flex items-center gap-1 cursor-pointer text-[10px] text-slate-500 font-bold select-none">
+                                        <input type="checkbox" id="showAuthorToggle" onchange="toggleAuthorDisplay(this.checked)" class="w-3.5 h-3.5 text-amber-600 rounded border-slate-300 focus:ring-amber-500">
+                                        표시
+                                    </label>
+                                </div>
+                                <input type="text" id="globalAuthor" value="공사팀" 
+                                    oninput="updateGlobalInfo()" 
+                                    class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500/50 outline-none bg-white font-medium">
+                            </div>
+                            <div>
+                                <div class="flex items-center justify-between mb-1">
+                                    <label class="font-bold text-slate-700">배치 수량</label>
+                                    <label class="inline-flex items-center gap-1 cursor-pointer text-[10px] text-slate-500 font-bold select-none">
+                                        <input type="checkbox" id="showBadgeToggle" onchange="toggleBadgeDisplay(this.checked)" class="w-3.5 h-3.5 text-amber-600 rounded border-slate-300 focus:ring-amber-500">
+                                        태그인쇄
+                                    </label>
+                                </div>
+                                <select id="photosPerPage" onchange="renderPhotoSheets()" class="w-full px-2 py-1.5 border border-slate-300 rounded-lg outline-none font-bold text-slate-700 bg-white focus:ring-2 focus:ring-amber-500/50">
+                                    <option value="2" selected>페이지당 2개 (표준)</option>
+                                    <option value="1">페이지당 1개 (상세)</option>
+                                    <option value="3">페이지당 3개 (3단)</option>
+                                    <option value="4">페이지당 4개 (4단)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block font-bold text-slate-700 mb-1">사진 비율 모드</label>
+                            <select id="imageFitMode" onchange="renderPhotoSheets()" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg outline-none font-medium text-slate-700 bg-white focus:ring-2 focus:ring-amber-500/50">
+                                <option value="contain" selected>전체 보기 (비율 유지 - Contain)</option>
+                                <option value="cover">꽉 채우기 (여백 없음 - Cover)</option>
+                            </select>
+                        </div>
+
+                        <div class="pt-2.5 mt-2.5 border-t border-slate-100">
+                            <div class="flex items-center justify-between mb-1">
+                                <label class="font-bold text-slate-700">추가 항목 (선택)</label>
+                                <label class="inline-flex items-center gap-1 cursor-pointer text-[10px] text-slate-500 font-bold select-none">
+                                    <input type="checkbox" id="showExtraFieldToggle" onchange="toggleExtraFieldDisplay(this.checked)" class="w-3.5 h-3.5 text-amber-600 rounded border-slate-300 focus:ring-amber-500">
+                                    사용
+                                </label>
+                            </div>
+                            <input type="text" id="extraFieldLabel" placeholder="항목명 (예: 감독원, 협력업체, 특기사항)" maxlength="10"
+                                oninput="updateExtraFieldLabel()"
+                                class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500/50 outline-none font-medium text-xs">
+                            <p class="text-[10px] text-slate-400 font-medium mt-1">켜면 사진카드에 한 줄이 추가되고, 항목명은 사진마다 자유롭게 입력할 수 있습니다.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 3: Batch Entry Tools -->
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200/80 hover:shadow-md transition-shadow">
+                    <div class="flex items-center justify-between mb-3 border-b border-slate-100 pb-2.5">
+                        <h2 class="text-xs font-extrabold uppercase tracking-wider text-slate-700 flex items-center gap-2">
+                            <span class="w-6 h-6 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs">
+                                <i class="fa-solid fa-layer-group"></i>
+                            </span>
+                            일괄 입력 (Batch Tools)
+                        </h2>
+                        <span class="text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">Speed UP</span>
+                    </div>
+                    
+                    <div class="space-y-2 text-xs">
+                        <div class="flex gap-1.5 items-center">
+                            <span class="w-16 font-bold text-slate-600 shrink-0">공종명</span>
+                            <input type="text" id="batchWorkType" placeholder="예: 토공사 / 굴착" class="flex-1 px-2.5 py-1 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500/50 outline-none">
+                            <button onclick="applyBatch('workType')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-lg transition shadow-sm text-[11px]">적용</button>
+                        </div>
+                        <div class="flex gap-1.5 items-center">
+                            <span class="w-16 font-bold text-slate-600 shrink-0">날짜</span>
+                            <input type="date" id="batchDate" class="flex-1 px-2.5 py-1 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500/50 outline-none text-slate-700 font-medium">
+                            <button onclick="applyBatch('date')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-lg transition shadow-sm text-[11px]">적용</button>
+                        </div>
+                        <div class="flex gap-1.5 items-center">
+                            <span class="w-16 font-bold text-slate-600 shrink-0">위치/측점</span>
+                            <input type="text" id="batchLocation" placeholder="예: STA 0+120 ~ 0+150" class="flex-1 px-2.5 py-1 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500/50 outline-none">
+                            <button onclick="applyBatch('applyBatch')" onclick="applyBatch('location')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-lg transition shadow-sm text-[11px]">적용</button>
+                        </div>
+                        <div class="flex gap-1.5 items-center">
+                            <span class="w-16 font-bold text-slate-600 shrink-0">구분태그</span>
+                            <input type="text" id="batchBadge" list="batchBadgeOptions" placeholder="예: 시공중 (직접입력 가능)" maxlength="12" class="flex-1 px-2.5 py-1 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500/50 outline-none">
+                            <datalist id="batchBadgeOptions">
+                                <option value="착공전">
+                                <option value="시공전">
+                                <option value="시공중">
+                                <option value="시공후">
+                                <option value="준공">
+                            </datalist>
+                            <button onclick="applyBatch('badge')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-lg transition shadow-sm text-[11px]">적용</button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Center Printable Photo Sheets Container -->
+        <div class="w-full flex flex-col items-center pb-12">
+            <div id="photoSheetsContainer" class="photo-sheets-grid w-full">
+                <!-- Dynamic Pages Render Here -->
+            </div>
+        </div>
+    </main>
+
+    <!-- Photo Editor & Annotation Modal -->
+    <div id="annotationModal" class="fixed inset-0 bg-slate-950/80 z-50 flex items-center justify-center hidden backdrop-blur-md no-print p-3 sm:p-5">
+        <div class="bg-slate-900 rounded-2xl shadow-2xl max-w-5xl w-full flex flex-col max-h-[92vh] overflow-hidden border border-slate-800">
+            
+            <!-- Modal Header -->
+            <div class="bg-slate-900 text-white px-5 py-3.5 border-b border-slate-800 flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                    <span class="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-500/30 text-amber-400 flex items-center justify-center font-bold">
+                        <i class="fa-solid fa-pen-ruler text-sm"></i>
+                    </span>
+                    <div>
+                        <h3 class="font-extrabold text-sm text-slate-100 flex items-center gap-2">
+                            현장 사진 편집 & 마킹 스튜디오
+                        </h3>
+                        <p class="text-[11px] text-slate-400 font-medium">자유드로잉, 직선, 화살표, 도형, 텍스트 삽입 및 실행취소 지원</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <button onclick="rotateModalPhoto(-90)" title="좌로 90도 회전" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-semibold border border-slate-700 transition">
+                        <i class="fa-solid fa-rotate-left"></i>
+                    </button>
+                    <button onclick="rotateModalPhoto(90)" title="우로 90도 회전" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-semibold border border-slate-700 transition">
+                        <i class="fa-solid fa-rotate-right"></i>
+                    </button>
+                    <div class="h-4 w-px bg-slate-800 my-auto"></div>
+                    <button onclick="closeAnnotationModal()" class="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition">
+                        <i class="fa-solid fa-xmark text-lg"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Toolbar Control Bar -->
+            <div class="bg-slate-800/90 border-b border-slate-700/80 px-4 py-2.5 flex flex-wrap gap-2.5 items-center text-xs text-slate-200">
+                
+                <!-- Tools Group -->
+                <div class="flex items-center bg-slate-900/80 p-1 rounded-xl border border-slate-700/60 gap-1 flex-wrap">
+                    <button onclick="setAnnotTool('pen')" id="tool_pen" class="tool-btn active px-2.5 py-1.5 rounded-lg font-bold flex items-center gap-1.5 transition text-slate-300 bg-slate-800 hover:bg-slate-700">
+                        <i class="fa-solid fa-pen"></i> 펜
+                    </button>
+                    <button onclick="setAnnotTool('highlighter')" id="tool_highlighter" class="tool-btn px-2.5 py-1.5 rounded-lg font-bold flex items-center gap-1.5 transition text-slate-300 bg-slate-800 hover:bg-slate-700">
+                        <i class="fa-solid fa-highlighter"></i> 형광펜
+                    </button>
+                    <button onclick="setAnnotTool('arrow')" id="tool_arrow" class="tool-btn px-2.5 py-1.5 rounded-lg font-bold flex items-center gap-1.5 transition text-slate-300 bg-slate-800 hover:bg-slate-700">
+                        <i class="fa-solid fa-location-arrow"></i> 화살표
+                    </button>
+                    <button onclick="setAnnotTool('line')" id="tool_line" class="tool-btn px-2.5 py-1.5 rounded-lg font-bold flex items-center gap-1.5 transition text-slate-300 bg-slate-800 hover:bg-slate-700">
+                        <i class="fa-solid fa-minus"></i> 직선
+                    </button>
+                    <button onclick="setAnnotTool('rect')" id="tool_rect" class="tool-btn px-2.5 py-1.5 rounded-lg font-bold flex items-center gap-1.5 transition text-slate-300 bg-slate-800 hover:bg-slate-700">
+                        <i class="fa-regular fa-square"></i> 사각형
+                    </button>
+                    <button onclick="setAnnotTool('circle')" id="tool_circle" class="tool-btn px-2.5 py-1.5 rounded-lg font-bold flex items-center gap-1.5 transition text-slate-300 bg-slate-800 hover:bg-slate-700">
+                        <i class="fa-regular fa-circle"></i> 원형
+                    </button>
+                    <button onclick="setAnnotTool('text')" id="tool_text" class="tool-btn px-2.5 py-1.5 rounded-lg font-bold flex items-center gap-1.5 transition text-slate-300 bg-slate-800 hover:bg-slate-700">
+                        <i class="fa-solid fa-font"></i> 텍스트
+                    </button>
+                </div>
+
+                <div class="h-5 w-px bg-slate-700 hidden lg:block"></div>
+
+                <!-- Palette Colors -->
+                <div class="flex items-center gap-1.5 bg-slate-900/80 p-1 rounded-xl border border-slate-700/60">
+                    <button onclick="selectSwatch('#ef4444')" class="w-6 h-6 rounded-lg bg-red-500 hover:scale-105 transition shadow-sm border border-white/20"></button>
+                    <button onclick="selectSwatch('#f59e0b')" class="w-6 h-6 rounded-lg bg-amber-500 hover:scale-105 transition shadow-sm border border-white/20"></button>
+                    <button onclick="selectSwatch('#10b981')" class="w-6 h-6 rounded-lg bg-emerald-500 hover:scale-105 transition shadow-sm border border-white/20"></button>
+                    <button onclick="selectSwatch('#3b82f6')" class="w-6 h-6 rounded-lg bg-blue-500 hover:scale-105 transition shadow-sm border border-white/20"></button>
+                    <button onclick="selectSwatch('#ffffff')" class="w-6 h-6 rounded-lg bg-white hover:scale-105 transition shadow-sm border border-slate-300"></button>
+                    <button onclick="selectSwatch('#0f172a')" class="w-6 h-6 rounded-lg bg-slate-900 hover:scale-105 transition shadow-sm border border-slate-600"></button>
+                    <input type="color" id="annotColor" value="#ef4444" class="w-7 h-7 rounded-lg border border-slate-600 bg-slate-800 cursor-pointer p-0.5" title="커스텀 색상">
+                </div>
+
+                <!-- Stroke Width -->
+                <div class="flex items-center gap-1.5 bg-slate-900/80 px-2.5 py-1 rounded-xl border border-slate-700/60">
+                    <span class="text-[11px] font-bold text-slate-400">두께:</span>
+                    <select id="annotLineWidth" class="bg-slate-800 text-white border border-slate-700 rounded-lg px-2 py-0.5 font-medium outline-none">
+                        <option value="2">얇게 (2px)</option>
+                        <option value="5" selected>보통 (5px)</option>
+                        <option value="10">두껍게 (10px)</option>
+                        <option value="18">매우 두껍게 (18px)</option>
+                    </select>
+                </div>
+
+                <div class="flex-1"></div>
+
+                <!-- History Action Tools -->
+                <div class="flex items-center gap-1">
+                    <button onclick="undoAnnotation()" title="실행 취소 (Ctrl+Z)" class="px-2.5 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg font-bold flex items-center gap-1 transition">
+                        <i class="fa-solid fa-rotate-left"></i> 되돌리기
+                    </button>
+                    <button onclick="resetAnnotationCanvas()" title="원본 사진으로 초기화" class="px-2.5 py-1.5 bg-rose-900/50 hover:bg-rose-800/80 text-rose-200 rounded-lg font-bold flex items-center gap-1 transition border border-rose-700/50">
+                        <i class="fa-solid fa-trash-arrow-up"></i> 초기화
+                    </button>
+                </div>
+
+            </div>
+
+            <!-- Drawing Canvas Workspace -->
+            <div class="flex-1 p-4 bg-slate-950 flex items-center justify-center overflow-auto relative min-h-[380px]">
+                <canvas id="annotationCanvas" class="max-w-full max-h-[62vh] bg-black shadow-2xl rounded-lg border border-slate-800"></canvas>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="bg-slate-900 px-5 py-3.5 flex items-center justify-between border-t border-slate-800">
+                <p class="text-xs text-slate-400 font-medium hidden sm:block">
+                    💡 <span class="text-amber-400 font-semibold">Tip:</span> 마우스 또는 터치로 그림을 그린 후 [적용하기]를 눌러 저장하세요.
+                </p>
+                <div class="flex items-center gap-2 ml-auto">
+                    <button onclick="closeAnnotationModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-xl transition">
+                        취소
+                    </button>
+                    <button onclick="saveAnnotation()" class="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black rounded-xl shadow-lg shadow-amber-500/20 transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-check text-sm"></i> 편집 사진 적용하기
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Custom Confirmation Modal (Replaces native confirm) -->
+    <div id="customConfirmModal" class="fixed inset-0 bg-slate-950/70 z-50 flex items-center justify-center hidden backdrop-blur-sm no-print p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-5 text-center flex flex-col items-center">
+            <div class="w-12 h-12 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center text-xl mb-3">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <h3 id="confirmTitle" class="font-extrabold text-base text-slate-800 mb-1">전체 삭제 확인</h3>
+            <p id="confirmMessage" class="text-xs text-slate-500 font-medium mb-5 leading-relaxed">
+                등록된 모든 현장 사진과 입력 내용이 삭제됩니다.<br>정말 진행하시겠습니까?
+            </p>
+            <div class="flex items-center gap-2 w-full">
+                <button onclick="closeConfirmModal(false)" class="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition">
+                    취소
+                </button>
+                <button onclick="closeConfirmModal(true)" class="flex-1 py-2 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-xl shadow transition">
+                    삭제하기
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 현장별 저장함 패널 -->
+    <div id="projectStorePanel" class="fixed inset-0 bg-slate-950/70 z-50 hidden items-center justify-center backdrop-blur-sm no-print p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-5 max-h-[80vh] flex flex-col">
+            <div class="flex items-center justify-between mb-3 border-b border-slate-100 pb-2.5 shrink-0">
+                <h3 class="font-extrabold text-sm text-slate-800 flex items-center gap-2">
+                    <span class="w-6 h-6 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center text-xs">
+                        <i class="fa-solid fa-box-archive"></i>
+                    </span>
+                    현장별 저장함
+                </h3>
+                <button onclick="toggleProjectStorePanel()" class="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <p class="text-[11px] text-slate-400 font-medium mb-3 shrink-0">여러 현장을 이름별로 저장하고 언제든 불러올 수 있습니다. 브라우저(이 기기)에 저장됩니다.</p>
+            <div id="projectStoreList" class="flex-1 overflow-y-auto space-y-1.5 min-h-[80px]">
+                <!-- 저장된 현장 목록이 여기 렌더링됩니다 -->
+            </div>
+            <button onclick="saveToProjectStore()" class="mt-3 w-full py-2 bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs rounded-xl shadow transition flex items-center justify-center gap-1.5 shrink-0">
+                <i class="fa-solid fa-plus"></i> 현재 작업을 새로 저장
+            </button>
+        </div>
+    </div>
+
+    <!-- JavaScript Logic -->
+    <script>
+        // State Management
+        let photoList = [];
+        let siteName = "원주 캠프롱 문화체육공원 조성사업(조경, 토목)";
+        let author = "공사팀";
+        let showAuthor = false;
+        let showBadge = false;
+        let showExtraField = false;
+        let extraFieldLabel = "감독원";
+
+        // Annotation Editor State
+        let currentAnnotPhotoId = null;
+        let annotCanvas, annotCtx;
+        let activeTool = 'pen';
+        let isDrawing = false;
+        let startX = 0, startY = 0;
+        let baseImage = new Image();
+        let currentCanvasState = null;
+        let undoStack = []; // History array for undo
+
+        // Custom Confirm Callback State
+        let pendingConfirmCallback = null;
+
+        // DOM Elements
+        const imageInput = document.getElementById('imageInput');
+        const photoSheetsContainer = document.getElementById('photoSheetsContainer');
+        const photoCountText = document.getElementById('photoCountText');
+        const dropZone = document.getElementById('dropZone');
+
+        // ===================== IndexedDB 저장소 모듈 =====================
+        // 자동저장(마지막 작업내용)과 현장별 저장함(여러 프로젝트 이름 저장/불러오기)에 공용으로 사용
+        const DB_NAME = 'photoSheetDB';
+        const DB_VERSION = 1;
+        const STORE_PROJECTS = 'projects';   // 현장별 저장함 (key: 사용자가 지정한 이름)
+        const STORE_AUTOSAVE = 'autosave';   // 자동저장 (key: 'lastSession' 고정)
+        let dbInstance = null;
+
+        function openDB() {
+            return new Promise((resolve, reject) => {
+                if (dbInstance) { resolve(dbInstance); return; }
+                const req = indexedDB.open(DB_NAME, DB_VERSION);
+                req.onupgradeneeded = (e) => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains(STORE_PROJECTS)) {
+                        db.createObjectStore(STORE_PROJECTS, { keyPath: 'name' });
+                    }
+                    if (!db.objectStoreNames.contains(STORE_AUTOSAVE)) {
+                        db.createObjectStore(STORE_AUTOSAVE, { keyPath: 'key' });
+                    }
+                };
+                req.onsuccess = (e) => { dbInstance = e.target.result; resolve(dbInstance); };
+                req.onerror = (e) => reject(e.target.error);
+            });
+        }
+
+        function dbPut(storeName, value) {
+            return openDB().then(db => new Promise((resolve, reject) => {
+                const tx = db.transaction(storeName, 'readwrite');
+                tx.objectStore(storeName).put(value);
+                tx.oncomplete = () => resolve(true);
+                tx.onerror = (e) => reject(e.target.error);
+            }));
+        }
+
+        function dbGet(storeName, key) {
+            return openDB().then(db => new Promise((resolve, reject) => {
+                const tx = db.transaction(storeName, 'readonly');
+                const req = tx.objectStore(storeName).get(key);
+                req.onsuccess = () => resolve(req.result || null);
+                req.onerror = (e) => reject(e.target.error);
+            }));
+        }
+
+        function dbGetAll(storeName) {
+            return openDB().then(db => new Promise((resolve, reject) => {
+                const tx = db.transaction(storeName, 'readonly');
+                const req = tx.objectStore(storeName).getAll();
+                req.onsuccess = () => resolve(req.result || []);
+                req.onerror = (e) => reject(e.target.error);
+            }));
+        }
+
+        function dbDelete(storeName, key) {
+            return openDB().then(db => new Promise((resolve, reject) => {
+                const tx = db.transaction(storeName, 'readwrite');
+                tx.objectStore(storeName).delete(key);
+                tx.oncomplete = () => resolve(true);
+                tx.onerror = (e) => reject(e.target.error);
+            }));
+        }
+
+        // 현재 화면 상태를 저장 가능한 데이터 객체로 수집
+        function collectCurrentData() {
+            saveCurrentInputValues();
+            return {
+                siteName: document.getElementById('globalSiteName').value,
+                author: document.getElementById('globalAuthor').value,
+                showAuthor: document.getElementById('showAuthorToggle').checked,
+                showBadge: document.getElementById('showBadgeToggle').checked,
+                showExtraField: document.getElementById('showExtraFieldToggle').checked,
+                extraFieldLabel: document.getElementById('extraFieldLabel').value,
+                photosPerPage: document.getElementById('photosPerPage').value,
+                photoList: photoList
+            };
+        }
+
+        // 데이터 객체를 화면에 반영
+        function applyLoadedData(data) {
+            if (!data) return;
+            if (data.siteName !== undefined) document.getElementById('globalSiteName').value = data.siteName;
+            if (data.author !== undefined) document.getElementById('globalAuthor').value = data.author;
+            if (data.showAuthor !== undefined) document.getElementById('showAuthorToggle').checked = data.showAuthor;
+            if (data.showBadge !== undefined) document.getElementById('showBadgeToggle').checked = data.showBadge;
+            if (data.showExtraField !== undefined) {
+                document.getElementById('showExtraFieldToggle').checked = data.showExtraField;
+                showExtraField = data.showExtraField;
+            }
+            if (data.extraFieldLabel !== undefined) {
+                document.getElementById('extraFieldLabel').value = data.extraFieldLabel;
+                extraFieldLabel = data.extraFieldLabel || "감독원";
+            }
+            if (data.photosPerPage !== undefined) document.getElementById('photosPerPage').value = data.photosPerPage;
+            photoList = data.photoList || [];
+            renderPhotoSheets();
+        }
+
+        // ---- 자동저장 ----
+        let autoSaveTimer = null;
+        function scheduleAutoSave() {
+            clearTimeout(autoSaveTimer);
+            autoSaveTimer = setTimeout(() => {
+                const data = collectCurrentData();
+                dbPut(STORE_AUTOSAVE, { key: 'lastSession', data: data, savedAt: Date.now() }).catch(() => {});
+            }, 1200); // 입력 멈춘 후 1.2초 뒤 저장 (너무 잦은 쓰기 방지)
+        }
+
+        async function restoreAutoSave() {
+            try {
+                const record = await dbGet(STORE_AUTOSAVE, 'lastSession');
+                if (record && record.data && record.data.photoList && record.data.photoList.length > 0) {
+                    applyLoadedData(record.data);
+                    const savedTime = new Date(record.savedAt);
+                    showToast(`이전 작업 내용을 자동 복원했습니다. (${formatDate(savedTime)} 저장분)`);
+                }
+            } catch (err) {
+                console.error('자동저장 복원 실패', err);
+            }
+        }
+
+        // ---- 현장별 저장함 ----
+        async function saveToProjectStore() {
+            const currentName = document.getElementById('globalSiteName').value.trim() || '이름없는 현장';
+            const input = window.prompt("저장함에 저장할 현장(프로젝트) 이름을 입력하세요", currentName);
+            if (input === null) return;
+            const projectName = input.trim() || currentName;
+            const data = collectCurrentData();
+            try {
+                await dbPut(STORE_PROJECTS, { name: projectName, data: data, savedAt: Date.now() });
+                showToast(`"${projectName}" 저장함에 저장되었습니다.`);
+                renderProjectStoreList();
+            } catch (err) {
+                showToast("저장함 저장 중 오류가 발생했습니다.");
+            }
+        }
+
+        async function renderProjectStoreList() {
+            const listEl = document.getElementById('projectStoreList');
+            if (!listEl) return;
+            let projects = [];
+            try {
+                projects = await dbGetAll(STORE_PROJECTS);
+            } catch (err) { /* ignore */ }
+
+            if (projects.length === 0) {
+                listEl.innerHTML = `<div class="text-xs text-slate-400 text-center py-3">저장된 현장이 없습니다.</div>`;
+                return;
+            }
+
+            projects.sort((a, b) => b.savedAt - a.savedAt);
+            listEl.innerHTML = projects.map(p => {
+                const dt = new Date(p.savedAt);
+                const dtStr = `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')} ${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
+                const photoCount = (p.data.photoList || []).length;
+                return `
+                    <div class="flex items-center justify-between gap-2 px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs">
+                        <div class="flex-1 min-w-0">
+                            <div class="font-bold text-slate-800 truncate">${escapeHtml(p.name)}</div>
+                            <div class="text-slate-400 text-[10px]">${dtStr} · 사진 ${photoCount}장</div>
+                        </div>
+                        <div class="flex gap-1 shrink-0">
+                            <button onclick="loadFromProjectStore('${escapeHtml(p.name).replace(/'/g, "\\'")}')" title="불러오기" class="w-7 h-7 flex items-center justify-center bg-blue-600 hover:bg-blue-500 text-white rounded-lg"><i class="fa-solid fa-folder-open text-xs"></i></button>
+                            <button onclick="deleteFromProjectStore('${escapeHtml(p.name).replace(/'/g, "\\'")}')" title="삭제" class="w-7 h-7 flex items-center justify-center bg-rose-600 hover:bg-rose-500 text-white rounded-lg"><i class="fa-solid fa-trash text-xs"></i></button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function loadFromProjectStore(name) {
+            try {
+                const record = await dbGet(STORE_PROJECTS, name);
+                if (!record) { showToast("해당 현장을 찾을 수 없습니다."); return; }
+                applyLoadedData(record.data);
+                showToast(`"${name}" 현장을 불러왔습니다.`);
+            } catch (err) {
+                showToast("불러오기 중 오류가 발생했습니다.");
+            }
+        }
+
+        async function deleteFromProjectStore(name) {
+            if (!window.confirm(`"${name}" 항목을 저장함에서 삭제할까요? (되돌릴 수 없습니다)`)) return;
+            try {
+                await dbDelete(STORE_PROJECTS, name);
+                showToast(`"${name}" 항목이 삭제되었습니다.`);
+                renderProjectStoreList();
+            } catch (err) {
+                showToast("삭제 중 오류가 발생했습니다.");
+            }
+        }
+
+        function toggleProjectStorePanel() {
+            const panel = document.getElementById('projectStorePanel');
+            if (!panel) return;
+            const isHidden = panel.classList.contains('hidden');
+            if (isHidden) {
+                panel.classList.remove('hidden');
+                panel.classList.add('flex');
+                renderProjectStoreList();
+            } else {
+                panel.classList.add('hidden');
+                panel.classList.remove('flex');
+            }
+        }
+        // ===================== 저장소 모듈 끝 =====================
+
+
+        window.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('batchDate').valueAsDate = new Date();
+
+            // Drag and drop setup
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.classList.add('border-amber-500', 'bg-amber-50');
+            });
+
+            dropZone.addEventListener('dragleave', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('border-amber-500', 'bg-amber-50');
+            });
+
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('border-amber-500', 'bg-amber-50');
+                if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                    processFiles(e.dataTransfer.files);
+                }
+            });
+
+            // Keyboard shortcut Ctrl+Z inside annotation modal
+            window.addEventListener('keydown', (e) => {
+                if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+                    const modal = document.getElementById('annotationModal');
+                    if (!modal.classList.contains('hidden')) {
+                        e.preventDefault();
+                        undoAnnotation();
+                    }
+                }
+            });
+
+            initCanvas();
+            renderPhotoSheets();
+            updateDashboardStickyOffset();
+            restoreAutoSave();
+        });
+
+        function updateDashboardStickyOffset() {
+            const header = document.querySelector('header');
+            const menu = document.getElementById('dashboardMenu');
+            if (header && menu) {
+                menu.style.top = header.offsetHeight + 'px';
+            }
+        }
+
+        function toggleDashboard() {
+            const menu = document.getElementById('dashboardMenu');
+            const icon = document.getElementById('toggleIcon');
+            if (menu.classList.contains('collapsed')) {
+                menu.classList.remove('collapsed');
+                icon.className = 'fa-solid fa-chevron-up';
+                updateDashboardStickyOffset();
+            } else {
+                menu.classList.add('collapsed');
+                icon.className = 'fa-solid fa-chevron-down';
+            }
+        }
+
+        window.addEventListener('resize', updateDashboardStickyOffset);
+
+        // 클립보드(Ctrl+V)로 이미지 붙여넣기 지원 - 카톡/이메일 등에서 캡처한 사진을 바로 추가
+        window.addEventListener('paste', (e) => {
+            // 입력창(텍스트/텍스트에리어)에 붙여넣기 하는 중이면 무시 (일반 텍스트 붙여넣기 방해 방지)
+            const activeTag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
+            if (activeTag === 'input' || activeTag === 'textarea') return;
+
+            const items = (e.clipboardData || window.clipboardData).items;
+            if (!items) return;
+
+            const pastedFiles = [];
+            for (let i = 0; i < items.length; i++) {
+                if (items[i].type.startsWith('image/')) {
+                    const file = items[i].getAsFile();
+                    if (file) pastedFiles.push(file);
+                }
+            }
+            if (pastedFiles.length > 0) {
+                e.preventDefault();
+                processFiles(pastedFiles);
+                showToast(`클립보드에서 사진 ${pastedFiles.length}장을 추가했습니다.`);
+            }
+        });
+
+        function triggerFileInput() {
+            imageInput.click();
+        }
+
+        function handleImageUpload(e) {
+            if (e.target.files && e.target.files.length > 0) {
+                processFiles(e.target.files);
+                imageInput.value = '';
+            }
+        }
+
+        function processFiles(files) {
+            const fileArray = Array.from(files);
+
+            fileArray.forEach(file => {
+                if (!file.type.startsWith('image/')) return;
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const rawImgUrl = e.target.result;
+                    let photoDate = formatDate(new Date());
+
+                    try {
+                        EXIF.getData(file, function() {
+                            const exifDate = EXIF.getTag(this, "DateTimeOriginal");
+                            if (exifDate) {
+                                const parts = exifDate.split(" ");
+                                if (parts.length > 0) {
+                                    photoDate = parts[0].replace(/:/g, "-");
+                                }
+                            }
+                            compressImage(rawImgUrl, 1600, 0.85, (compressedUrl) => {
+                                addPhotoItem(compressedUrl, photoDate, file.name);
+                            });
+                        });
+                    } catch (err) {
+                        compressImage(rawImgUrl, 1600, 0.85, (compressedUrl) => {
+                            addPhotoItem(compressedUrl, photoDate, file.name);
+                        });
+                    }
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function compressImage(dataUrl, maxSide, quality, callback) {
+            const img = new Image();
+            img.onload = () => {
+                let width = img.width;
+                let height = img.height;
+
+                if (width > maxSide || height > maxSide) {
+                    if (width > height) {
+                        height = Math.round((height * maxSide) / width);
+                        width = maxSide;
+                    } else {
+                        width = Math.round((width * maxSide) / height);
+                        height = maxSide;
+                    }
+                }
+
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+
+                callback(canvas.toDataURL('image/jpeg', quality));
+            };
+            img.onerror = () => callback(dataUrl);
+            img.src = dataUrl;
+        }
+
+        function addPhotoItem(url, dateStr, fileName) {
+            saveCurrentInputValues();
+            let initialWork = "토공사";
+            let initialDesc = "";
+            
+            const cleanName = fileName.replace(/\.[^/.]+$/, "");
+            if(cleanName.length > 1) {
+                initialDesc = cleanName;
+            }
+
+            photoList.push({
+                id: 'photo_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+                url: url,
+                originalUrl: url,
+                workType: initialWork,
+                date: dateStr,
+                location: "STA 0+000",
+                description: initialDesc || "현장 시공 상태 및 위치 검측",
+                badge: "",
+                rotation: 0,
+                extraValue: ""
+            });
+
+            renderPhotoSheets();
+        }
+
+        function saveCurrentInputValues() {
+            document.querySelectorAll('.photo-card-block').forEach(block => {
+                const id = block.dataset.id;
+                const photo = photoList.find(p => p.id === id);
+                if (photo) {
+                    const workTypeInput = block.querySelector('input[placeholder="공종 입력"]');
+                    const dateInput = block.querySelector('input[type="date"]');
+                    const locationInput = block.querySelector('input[placeholder="위치 및 측점(STA)"]');
+                    const descInput = block.querySelector('textarea');
+                    const extraInput = block.querySelector(`input[placeholder="${extraFieldLabel} 입력"]`);
+
+                    if (workTypeInput) photo.workType = workTypeInput.value;
+                    if (dateInput) photo.date = dateInput.value;
+                    if (locationInput) photo.location = locationInput.value;
+                    if (descInput) photo.description = descInput.value;
+                    if (extraInput) photo.extraValue = extraInput.value;
+                }
+            });
+        }
+
+        function renderPhotoSheets() {
+            photoSheetsContainer.innerHTML = '';
+            
+            const photosPerPage = parseInt(document.getElementById('photosPerPage').value) || 2;
+            const fitMode = document.getElementById('imageFitMode').value || 'contain';
+            siteName = document.getElementById('globalSiteName').value;
+            author = document.getElementById('globalAuthor').value;
+            const authorCheckbox = document.getElementById('showAuthorToggle');
+            if (authorCheckbox) {
+                showAuthor = authorCheckbox.checked;
+            }
+            const badgeCheckbox = document.getElementById('showBadgeToggle');
+            if (badgeCheckbox) {
+                showBadge = badgeCheckbox.checked;
+            }
+
+            const totalPhotos = photoList.length;
+            const totalPages = Math.ceil(totalPhotos / photosPerPage) || 1;
+
+            photoCountText.innerText = `총 ${totalPhotos}장 / ${totalPages}페이지`;
+
+            if (totalPhotos === 0) {
+                photoSheetsContainer.innerHTML = `
+                    <div class="a4-preview-page empty-state-msg flex flex-col items-center justify-center text-slate-400 border border-dashed border-slate-300 rounded-2xl mx-auto">
+                        <i class="fa-solid fa-file-image text-6xl mb-4 text-slate-300"></i>
+                        <p class="text-base font-bold text-slate-700">등록된 현장 사진이 없습니다.</p>
+                        <p class="text-xs text-slate-400 mt-1.5 font-medium">상단의 [사진 추가] 버튼이나 파일 드래그를 이용해 사진을 등록해 주세요.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            for (let pageIdx = 0; pageIdx < totalPages; pageIdx++) {
+                const pagePhotos = photoList.slice(pageIdx * photosPerPage, (pageIdx + 1) * photosPerPage);
+                
+                const pageDiv = document.createElement('div');
+                pageDiv.className = 'a4-preview-page a4-page flex flex-col justify-between border border-slate-200 overflow-hidden';
+                pageDiv.dataset.pageIndex = pageIdx;
+
+                let pageHTML = `
+                    <div class="w-full flex-1 flex flex-col justify-between overflow-hidden">
+                        
+                        <!-- Header Field -->
+                        <div class="w-full flex items-center justify-between text-xs font-bold border-b-2 border-black pb-1 mb-1 shrink-0">
+                            <div class="flex items-center gap-2 flex-1">
+                                <span class="text-base font-black tracking-tight text-black shrink-0">현장명 :</span>
+                                <input type="text" value="${escapeHtml(siteName)}" 
+                                    oninput="document.getElementById('globalSiteName').value = this.value; siteName = this.value;"
+                                    class="font-extrabold text-base md:text-lg text-black border-b border-slate-300 px-1 py-0.5 outline-none w-full max-w-xl">
+                            </div>
+                            ${showAuthor ? `<div class="text-black text-xs font-bold shrink-0 ml-3">작성자 : ${escapeHtml(author)}</div>` : ''}
+                        </div>
+
+                        <!-- Title Header -->
+                        <div class="text-center my-1 shrink-0">
+                            <h2 class="text-xl font-black tracking-[0.3em] text-black">사 진 대 지</h2>
+                        </div>
+
+                        <!-- Photo Cards List Container -->
+                        <div class="photo-group flex flex-col gap-3 flex-1 min-h-0 justify-between py-1 overflow-hidden" id="page_group_${pageIdx}">
+                `;
+
+                pagePhotos.forEach((photo, idxInPage) => {
+                    const globalIndex = pageIdx * photosPerPage + idxInPage;
+                    
+                    pageHTML += `
+                        <div class="photo-card-block border-2 border-black p-1.5 bg-white flex flex-col justify-between flex-1 min-h-0 relative group overflow-hidden" data-id="${photo.id}">
+                            
+                            <!-- Non-printable Toolbar -->
+                            <div class="no-print absolute top-2 right-2 z-20 flex gap-1 bg-slate-900/90 p-1 rounded-xl backdrop-blur text-white shadow-lg">
+                                <button onclick="openAnnotationModal('${photo.id}')" title="편집 및 주석 달기" class="px-2.5 py-1 bg-amber-600 hover:bg-amber-500 rounded-lg text-xs font-bold flex items-center gap-1 transition">
+                                    <i class="fa-solid fa-pen-ruler"></i> 편집
+                                </button>
+                                <select onchange="handleBadgeSelectChange('${photo.id}', this)" title="시공 상태 태그" class="bg-slate-800 text-white text-xs px-1.5 py-1 rounded-lg outline-none border border-slate-700 font-medium">
+                                    <option value="" ${photo.badge === '' ? 'selected' : ''}>태그 없음</option>
+                                    <option value="시공전" ${photo.badge === '시공전' ? 'selected' : ''}>[시공전]</option>
+                                    <option value="시공중" ${photo.badge === '시공중' ? 'selected' : ''}>[시공중]</option>
+                                    <option value="시공후" ${photo.badge === '시공후' ? 'selected' : ''}>[시공후]</option>
+                                    <option value="착공전" ${photo.badge === '착공전' ? 'selected' : ''}>[착공전]</option>
+                                    <option value="준공" ${photo.badge === '준공' ? 'selected' : ''}>[준공]</option>
+                                    <option value="__custom__" ${photo.badge && !['','시공전','시공중','시공후','착공전','준공'].includes(photo.badge) ? 'selected' : ''}>직접입력...</option>
+                                </select>
+                                ${photo.badge && !['','시공전','시공중','시공후','착공전','준공'].includes(photo.badge) ? `
+                                <input type="text" value="${escapeHtml(photo.badge.trim())}" oninput="updatePhotoBadgeText('${photo.id}', this.value)" onblur="renderPhotoSheets()" placeholder="태그 입력" maxlength="12" class="w-16 bg-slate-800 text-white text-xs px-1.5 py-1 rounded-lg outline-none border border-amber-500 font-medium">
+                                ` : ''}
+                                <button onclick="rotatePhoto('${photo.id}', -90)" title="좌회전" class="w-6 h-6 flex items-center justify-center hover:bg-slate-700 rounded-lg text-xs"><i class="fa-solid fa-rotate-left"></i></button>
+                                <button onclick="rotatePhoto('${photo.id}', 90)" title="우회전" class="w-6 h-6 flex items-center justify-center hover:bg-slate-700 rounded-lg text-xs"><i class="fa-solid fa-rotate-right"></i></button>
+                                <button onclick="movePhoto(${globalIndex}, -1)" title="위로 이동" class="w-6 h-6 flex items-center justify-center hover:bg-slate-700 rounded-lg text-xs"><i class="fa-solid fa-arrow-up"></i></button>
+                                <button onclick="movePhoto(${globalIndex}, 1)" title="아래로 이동" class="w-6 h-6 flex items-center justify-center hover:bg-slate-700 rounded-lg text-xs"><i class="fa-solid fa-arrow-down"></i></button>
+                                <button onclick="deletePhoto('${photo.id}')" title="삭제" class="w-6 h-6 flex items-center justify-center hover:bg-rose-600 rounded-lg text-xs transition"><i class="fa-solid fa-xmark"></i></button>
+                            </div>
+
+                            <!-- Photo Display Box -->
+                            <div class="photo-img-container w-full flex-1 min-h-0 bg-slate-50 border border-black overflow-hidden flex items-center justify-center relative mb-1">
+                                ${photo.badge && photo.badge.trim() ? `<div class="photo-badge-tag absolute top-2 left-2 z-10 bg-red-600 text-white font-black text-xs px-2.5 py-1 rounded shadow-md border border-white ${!showBadge ? 'no-print' : ''}">${escapeHtml(photo.badge.trim())}</div>` : ''}
+                                ${photo.url ? `<img src="${photo.url}" style="transform: rotate(${photo.rotation}deg); object-fit: ${fitMode};" class="w-full h-full max-h-full transition-transform duration-200" alt="공사 현장 사진">` : `<div class="text-slate-400 text-xs font-semibold">사진 없음</div>`}
+                            </div>
+
+                            <!-- Information Table -->
+                            <table class="photo-card-table w-full text-xs text-black border-collapse border-1.5 border-black shrink-0 table-fixed">
+                                <colgroup>
+                                    <col style="width: 10%;">
+                                    <col style="width: 40%;">
+                                    <col style="width: 10%;">
+                                    <col style="width: 40%;">
+                                </colgroup>
+                                <tbody>
+                                    <tr class="h-7">
+                                        <th class="bg-slate-100 border border-black text-center font-bold">공 종</th>
+                                        <td class="border border-black p-0.5">
+                                            <input type="text" 
+                                                   value="${escapeHtml(photo.workType)}" 
+                                                   oninput="updatePhotoData('${photo.id}', 'workType', this.value)" 
+                                                   class="w-full px-1 py-0.5 font-bold text-slate-900 outline-none text-xs" 
+                                                   placeholder="공종 입력">
+                                        </td>
+                                        <th class="bg-slate-100 border border-black text-center font-bold">날 짜</th>
+                                        <td class="border border-black p-0.5">
+                                            <input type="date" 
+                                                   value="${photo.date}" 
+                                                   onchange="updatePhotoData('${photo.id}', 'date', this.value)" 
+                                                   class="w-full px-1 py-0.5 font-medium text-slate-900 outline-none text-xs">
+                                        </td>
+                                    </tr>
+                                    <tr class="h-8">
+                                        <th class="bg-slate-100 border border-black text-center font-bold">위 치</th>
+                                        <td class="border border-black p-0.5">
+                                            <input type="text" 
+                                                   value="${escapeHtml(photo.location)}" 
+                                                   oninput="updatePhotoData('${photo.id}', 'location', this.value)" 
+                                                   class="w-full px-1 py-0.5 font-medium text-slate-900 outline-none text-xs" 
+                                                   placeholder="위치 및 측점(STA)">
+                                        </td>
+                                        <th class="bg-slate-100 border border-black text-center font-bold">내 용</th>
+                                        <td class="border border-black p-0.5">
+                                            <textarea id="desc_${photo.id}"
+                                                      oninput="updatePhotoData('${photo.id}', 'description', this.value); autoFitDescription(this);" 
+                                                      rows="1" 
+                                                      class="auto-fit-desc w-full px-1 py-0.5 font-normal text-slate-900 outline-none leading-snug resize-none text-xs" 
+                                                      placeholder="시공 상세 내용">${escapeHtml(photo.description)}</textarea>
+                                        </td>
+                                    </tr>
+                                    ${showExtraField ? `
+                                    <tr class="h-7">
+                                        <th class="bg-slate-100 border border-black text-center font-bold">${escapeHtml(extraFieldLabel)}</th>
+                                        <td class="border border-black p-0.5" colspan="3">
+                                            <input type="text" 
+                                                   value="${escapeHtml(photo.extraValue || '')}" 
+                                                   oninput="updatePhotoData('${photo.id}', 'extraValue', this.value)" 
+                                                   class="w-full px-1 py-0.5 font-medium text-slate-900 outline-none text-xs" 
+                                                   placeholder="${escapeHtml(extraFieldLabel)} 입력">
+                                        </td>
+                                    </tr>
+                                    ` : ''}
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                });
+
+                // Fill remaining empty photo slots
+                const emptySlotsCount = photosPerPage - pagePhotos.length;
+                for (let e = 0; e < emptySlotsCount; e++) {
+                    pageHTML += `
+                        <div class="photo-card-block border-2 border-black p-1.5 bg-white flex flex-col justify-between flex-1 min-h-0 relative overflow-hidden opacity-75">
+                            <!-- Empty Photo Box -->
+                            <div class="photo-img-container w-full flex-1 min-h-0 bg-slate-50 border border-black border-dashed flex flex-col items-center justify-center text-slate-400 mb-1 cursor-pointer no-print hover:bg-amber-50/50 hover:border-amber-400 transition" onclick="triggerFileInput()" title="사진 추가하기">
+                                <i class="fa-solid fa-plus-circle text-xl mb-1 text-slate-400"></i>
+                                <span class="text-xs font-semibold text-slate-500">사진 추가 (여백 영역)</span>
+                            </div>
+                            <div class="photo-img-container w-full flex-1 min-h-0 bg-slate-50 border border-black hidden print-only mb-1"></div>
+
+                            <!-- Empty Information Table -->
+                            <table class="photo-card-table w-full text-xs text-black border-collapse border-1.5 border-black shrink-0 table-fixed">
+                                <colgroup>
+                                    <col style="width: 10%;">
+                                    <col style="width: 40%;">
+                                    <col style="width: 10%;">
+                                    <col style="width: 40%;">
+                                </colgroup>
+                                <tbody>
+                                    <tr class="h-7">
+                                        <th class="bg-slate-100 border border-black text-center font-bold">공 종</th>
+                                        <td class="border border-black p-0.5"></td>
+                                        <th class="bg-slate-100 border border-black text-center font-bold">날 짜</th>
+                                        <td class="border border-black p-0.5"></td>
+                                    </tr>
+                                    <tr class="h-8">
+                                        <th class="bg-slate-100 border border-black text-center font-bold">위 치</th>
+                                        <td class="border border-black p-0.5"></td>
+                                        <th class="bg-slate-100 border border-black text-center font-bold">내 용</th>
+                                        <td class="border border-black p-0.5"></td>
+                                    </tr>
+                                    ${showExtraField ? `
+                                    <tr class="h-7">
+                                        <th class="bg-slate-100 border border-black text-center font-bold">${escapeHtml(extraFieldLabel)}</th>
+                                        <td class="border border-black p-0.5" colspan="3"></td>
+                                    </tr>
+                                    ` : ''}
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                }
+
+                pageHTML += `
+                        </div>
+                    </div>
+                    <!-- Footer Pagination -->
+                    <div class="text-center text-xs font-bold text-slate-800 pt-1 border-t border-slate-300 shrink-0">
+                        - ${pageIdx + 1} / ${totalPages} -
+                    </div>
+                `;
+
+                pageDiv.innerHTML = pageHTML;
+                photoSheetsContainer.appendChild(pageDiv);
+
+                // Enable Drag and drop reordering
+                const pageGroupEl = document.getElementById(`page_group_${pageIdx}`);
+                if (pageGroupEl) {
+                    new Sortable(pageGroupEl, {
+                        animation: 150,
+                        ghostClass: 'opacity-40',
+                        onEnd: function () {
+                            reorderPhotosFromDOM();
+                        }
+                    });
+                }
+            }
+
+            // 렌더링 직후 내용 칸이 넘치는 항목은 폰트를 자동으로 줄여 잘리지 않도록 처리
+            requestAnimationFrame(autoFitAllDescriptions);
+            scheduleAutoSave();
+        }
+
+        function toggleAuthorDisplay(checked) {
+            saveCurrentInputValues();
+            showAuthor = checked;
+            renderPhotoSheets();
+        }
+
+        function toggleBadgeDisplay(checked) {
+            saveCurrentInputValues();
+            showBadge = checked;
+            renderPhotoSheets();
+        }
+
+        function toggleExtraFieldDisplay(checked) {
+            saveCurrentInputValues();
+            showExtraField = checked;
+            renderPhotoSheets();
+        }
+
+        function updateExtraFieldLabel() {
+            const val = document.getElementById('extraFieldLabel').value.trim();
+            extraFieldLabel = val || "감독원";
+            renderPhotoSheets();
+        }
+
+        function updatePhotoData(id, key, value) {
+            const item = photoList.find(p => p.id === id);
+            if (item) {
+                item[key] = value;
+                scheduleAutoSave();
+            }
+        }
+
+        function updatePhotoBadge(id, badgeValue) {
+            saveCurrentInputValues();
+            const item = photoList.find(p => p.id === id);
+            if (item) {
+                item.badge = badgeValue;
+                renderPhotoSheets();
+            }
+        }
+
+        // 태그 입력창 타이핑 시 리렌더링 없이 값만 갱신(포커스 유지)
+        function updatePhotoBadgeText(id, badgeValue) {
+            const item = photoList.find(p => p.id === id);
+            if (item) {
+                item.badge = badgeValue;
+                scheduleAutoSave();
+            }
+        }
+
+        // select에서 옵션 선택 시 처리 (직접입력 선택 시 빈 값으로 전환 후 입력창 포커스)
+        function handleBadgeSelectChange(id, selectEl) {
+            if (selectEl.value === '__custom__') {
+                const item = photoList.find(p => p.id === id);
+                if (item) { item.badge = ' '; } // 공백으로 커스텀 모드 트리거
+                renderPhotoSheets();
+                setTimeout(() => {
+                    const input = document.querySelector(`[data-id="${id}"] input[placeholder="태그 입력"]`);
+                    if (input) { input.value = ''; input.focus(); }
+                }, 0);
+            } else {
+                updatePhotoBadge(id, selectEl.value);
+            }
+        }
+
+        function updateGlobalInfo() {
+            saveCurrentInputValues();
+            siteName = document.getElementById('globalSiteName').value;
+            author = document.getElementById('globalAuthor').value;
+            renderPhotoSheets();
+        }
+
+        function rotatePhoto(id, degrees) {
+            saveCurrentInputValues();
+            const item = photoList.find(p => p.id === id);
+            if (item) {
+                item.rotation = (item.rotation + degrees) % 360;
+                renderPhotoSheets();
+            }
+        }
+
+        function deletePhoto(id) {
+            saveCurrentInputValues();
+            photoList = photoList.filter(p => p.id !== id);
+            renderPhotoSheets();
+        }
+
+        function movePhoto(index, direction) {
+            saveCurrentInputValues();
+            const targetIndex = index + direction;
+            if (targetIndex < 0 || targetIndex >= photoList.length) return;
+            
+            const temp = photoList[index];
+            photoList[index] = photoList[targetIndex];
+            photoList[targetIndex] = temp;
+            renderPhotoSheets();
+        }
+
+        function reorderPhotosFromDOM() {
+            saveCurrentInputValues();
+            const newOrderIds = [];
+            document.querySelectorAll('.photo-card-block').forEach(el => {
+                const id = el.dataset.id;
+                if(id) newOrderIds.push(id);
+            });
+
+            if(newOrderIds.length === photoList.length) {
+                photoList.sort((a, b) => newOrderIds.indexOf(a.id) - newOrderIds.indexOf(b.id));
+                renderPhotoSheets();
+            }
+        }
+
+        function applyBatch(type) {
+            if (photoList.length === 0) {
+                showToast("일괄 적용할 사진이 없습니다.");
+                return;
+            }
+            saveCurrentInputValues();
+
+            if (type === 'workType') {
+                const val = document.getElementById('batchWorkType').value;
+                if(!val) return;
+                photoList.forEach(p => p.workType = val);
+            } else if (type === 'date') {
+                const val = document.getElementById('batchDate').value;
+                if(!val) return;
+                photoList.forEach(p => p.date = val);
+            } else if (type === 'location') {
+                const val = document.getElementById('batchLocation').value;
+                if(!val) return;
+                photoList.forEach(p => p.location = val);
+            } else if (type === 'badge') {
+                const val = document.getElementById('batchBadge').value;
+                photoList.forEach(p => p.badge = val);
+            }
+            renderPhotoSheets();
+            showToast("일괄 입력 완료되었습니다.");
+        }
+
+        function openClearConfirmModal() {
+            if (photoList.length === 0) return;
+            pendingConfirmCallback = () => {
+                photoList = [];
+                renderPhotoSheets();
+                showToast("모든 사진 데이터가 초기화되었습니다.");
+            };
+            document.getElementById('customConfirmModal').classList.remove('hidden');
+        }
+
+        function closeConfirmModal(confirmed) {
+            document.getElementById('customConfirmModal').classList.add('hidden');
+            if (confirmed && pendingConfirmCallback) {
+                pendingConfirmCallback();
+            }
+            pendingConfirmCallback = null;
+        }
+
+        function initCanvas() {
+            annotCanvas = document.getElementById('annotationCanvas');
+            annotCtx = annotCanvas.getContext('2d');
+
+            // Mouse Events
+            annotCanvas.addEventListener('mousedown', startDrawing);
+            annotCanvas.addEventListener('mousemove', draw);
+            annotCanvas.addEventListener('mouseup', stopDrawing);
+            annotCanvas.addEventListener('mouseleave', stopDrawing);
+
+            // Touch Screen Events
+            annotCanvas.addEventListener('touchstart', (e) => {
+                if (e.touches.length === 1) {
+                    const touch = e.touches[0];
+                    startDrawing(touch);
+                }
+            });
+            annotCanvas.addEventListener('touchmove', (e) => {
+                if (e.touches.length === 1) {
+                    e.preventDefault();
+                    const touch = e.touches[0];
+                    draw(touch);
+                }
+            });
+            annotCanvas.addEventListener('touchend', stopDrawing);
+        }
+
+        function openAnnotationModal(id) {
+            saveCurrentInputValues();
+            currentAnnotPhotoId = id;
+            const photo = photoList.find(p => p.id === id);
+            if (!photo) return;
+
+            document.getElementById('annotationModal').classList.remove('hidden');
+            undoStack = [];
+
+            baseImage = new Image();
+            baseImage.onload = () => {
+                annotCanvas.width = baseImage.width;
+                annotCanvas.height = baseImage.height;
+                annotCtx.drawImage(baseImage, 0, 0);
+                saveCanvasState();
+            };
+            baseImage.src = photo.url;
+        }
+
+        function closeAnnotationModal() {
+            document.getElementById('annotationModal').classList.add('hidden');
+        }
+
+        function rotateModalPhoto(degrees) {
+            const photo = photoList.find(p => p.id === currentAnnotPhotoId);
+            if (!photo) return;
+            rotatePhoto(photo.id, degrees);
+
+            // Re-render in canvas
+            const tempImg = new Image();
+            tempImg.onload = () => {
+                const canvas = document.createElement('canvas');
+                if (Math.abs(degrees) === 90 || Math.abs(degrees) === 270) {
+                    canvas.width = tempImg.height;
+                    canvas.height = tempImg.width;
+                } else {
+                    canvas.width = tempImg.width;
+                    canvas.height = tempImg.height;
+                }
+                const ctx = canvas.getContext('2d');
+                ctx.translate(canvas.width / 2, canvas.height / 2);
+                ctx.rotate((degrees * Math.PI) / 180);
+                ctx.drawImage(tempImg, -tempImg.width / 2, -tempImg.height / 2);
+
+                const rotatedUrl = canvas.toDataURL('image/jpeg', 0.9);
+                photo.url = rotatedUrl;
+
+                baseImage = new Image();
+                baseImage.onload = () => {
+                    annotCanvas.width = baseImage.width;
+                    annotCanvas.height = baseImage.height;
+                    annotCtx.drawImage(baseImage, 0, 0);
+                    undoStack = [];
+                    saveCanvasState();
+                };
+                baseImage.src = rotatedUrl;
+            };
+            tempImg.src = annotCanvas.toDataURL('image/jpeg', 0.92);
+        }
+
+        function setAnnotTool(tool) {
+            activeTool = tool;
+            ['pen', 'highlighter', 'arrow', 'line', 'rect', 'circle', 'text'].forEach(t => {
+                const btn = document.getElementById(`tool_${t}`);
+                if (btn) {
+                    if (t === tool) {
+                        btn.classList.add('active');
+                    } else {
+                        btn.classList.remove('active');
+                    }
+                }
+            });
+        }
+
+        function selectSwatch(colorHex) {
+            document.getElementById('annotColor').value = colorHex;
+        }
+
+        function saveCanvasState() {
+            const state = annotCtx.getImageData(0, 0, annotCanvas.width, annotCanvas.height);
+            undoStack.push(state);
+            if (undoStack.length > 25) undoStack.shift(); // Limit history depth
+            currentCanvasState = state;
+        }
+
+        function restoreCanvasState() {
+            if (currentCanvasState) {
+                annotCtx.putImageData(currentCanvasState, 0, 0);
+            }
+        }
+
+        function undoAnnotation() {
+            if (undoStack.length > 1) {
+                undoStack.pop(); // Remove current state
+                const previousState = undoStack[undoStack.length - 1];
+                annotCtx.putImageData(previousState, 0, 0);
+                currentCanvasState = previousState;
+                showToast("되돌리기 실행됨");
+            } else {
+                showToast("더 이상 되돌릴 작업이 없습니다.");
+            }
+        }
+
+        function resetAnnotationCanvas() {
+            annotCtx.drawImage(baseImage, 0, 0);
+            undoStack = [];
+            saveCanvasState();
+            showToast("원본 이미지로 초기화되었습니다.");
+        }
+
+        function startDrawing(e) {
+            isDrawing = true;
+            const rect = annotCanvas.getBoundingClientRect();
+            const scaleX = annotCanvas.width / rect.width;
+            const scaleY = annotCanvas.height / rect.height;
+
+            startX = (e.clientX - rect.left) * scaleX;
+            startY = (e.clientY - rect.top) * scaleY;
+
+            if (activeTool === 'pen' || activeTool === 'highlighter') {
+                annotCtx.beginPath();
+                annotCtx.moveTo(startX, startY);
+            } else if (activeTool === 'text') {
+                const text = prompt("사진에 삽입할 문구를 입력하세요:", "특이사항 검측");
+                if (text) {
+                    const color = document.getElementById('annotColor').value;
+                    const strokeWidth = parseInt(document.getElementById('annotLineWidth').value);
+                    annotCtx.fillStyle = color;
+                    annotCtx.font = `bold ${strokeWidth * 6 + 18}px Noto Sans KR, sans-serif`;
+                    annotCtx.fillText(text, startX, startY);
+                    saveCanvasState();
+                }
+                isDrawing = false;
+            }
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+
+            const rect = annotCanvas.getBoundingClientRect();
+            const scaleX = annotCanvas.width / rect.width;
+            const scaleY = annotCanvas.height / rect.height;
+            const currX = (e.clientX - rect.left) * scaleX;
+            const currY = (e.clientY - rect.top) * scaleY;
+
+            const color = document.getElementById('annotColor').value;
+            const strokeWidth = parseInt(document.getElementById('annotLineWidth').value);
+
+            annotCtx.strokeStyle = color;
+            annotCtx.fillStyle = color;
+            annotCtx.lineWidth = strokeWidth;
+            annotCtx.lineCap = 'round';
+            annotCtx.lineJoin = 'round';
+
+            if (activeTool === 'pen') {
+                annotCtx.globalAlpha = 1.0;
+                annotCtx.lineTo(currX, currY);
+                annotCtx.stroke();
+            } else if (activeTool === 'highlighter') {
+                annotCtx.globalAlpha = 0.35;
+                annotCtx.lineWidth = strokeWidth * 2.5;
+                annotCtx.lineTo(currX, currY);
+                annotCtx.stroke();
+                annotCtx.globalAlpha = 1.0;
+            } else if (activeTool === 'line') {
+                restoreCanvasState();
+                annotCtx.beginPath();
+                annotCtx.moveTo(startX, startY);
+                annotCtx.lineTo(currX, currY);
+                annotCtx.stroke();
+            } else if (activeTool === 'rect') {
+                restoreCanvasState();
+                annotCtx.strokeRect(startX, startY, currX - startX, currY - startY);
+            } else if (activeTool === 'circle') {
+                restoreCanvasState();
+                annotCtx.beginPath();
+                const radius = Math.sqrt(Math.pow(currX - startX, 2) + Math.pow(currY - startY, 2));
+                annotCtx.arc(startX, startY, radius, 0, 2 * Math.PI);
+                annotCtx.stroke();
+            } else if (activeTool === 'arrow') {
+                restoreCanvasState();
+                drawArrow(startX, startY, currX, currY, strokeWidth * 3 + 8);
+            }
+        }
+
+        function stopDrawing() {
+            if (isDrawing) {
+                isDrawing = false;
+                annotCtx.globalAlpha = 1.0;
+                saveCanvasState();
+            }
+        }
+
+        function drawArrow(fromx, fromy, tox, toy, headlen) {
+            const dx = tox - fromx;
+            const dy = toy - fromy;
+            const angle = Math.atan2(dy, dx);
+            
+            annotCtx.beginPath();
+            annotCtx.moveTo(fromx, fromy);
+            annotCtx.lineTo(tox, toy);
+            annotCtx.stroke();
+
+            annotCtx.beginPath();
+            annotCtx.moveTo(tox, toy);
+            annotCtx.lineTo(tox - headlen * Math.cos(angle - Math.PI / 6), toy - headlen * Math.sin(angle - Math.PI / 6));
+            annotCtx.lineTo(tox - headlen * Math.cos(angle + Math.PI / 6), toy - headlen * Math.sin(angle + Math.PI / 6));
+            annotCtx.lineTo(tox, toy);
+            annotCtx.fill();
+        }
+
+        function saveAnnotation() {
+            const photo = photoList.find(p => p.id === currentAnnotPhotoId);
+            if (photo) {
+                photo.url = annotCanvas.toDataURL('image/jpeg', 0.92);
+                renderPhotoSheets();
+                closeAnnotationModal();
+                showToast("편집한 사진이 적용되었습니다.");
+            }
+        }
+
+        function exportJSON() {
+            saveCurrentInputValues();
+            if (photoList.length === 0) {
+                showToast("저장할 데이터가 없습니다.");
+                return;
+            }
+            const data = collectCurrentData();
+            const jsonStr = JSON.stringify(data, null, 2);
+            const blob = new Blob([jsonStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+
+            const defaultName = `사진대지_${formatDate(new Date())}`;
+            const fileName = promptExportFilename(defaultName);
+            if (fileName === null) { URL.revokeObjectURL(url); return; }
+
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${fileName}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function exportHTML() {
+            saveCurrentInputValues();
+            if (photoList.length === 0) {
+                showToast("내보낼 사진 데이터가 없습니다.");
+                return;
+            }
+
+            const container = document.getElementById('photoSheetsContainer');
+            if (!container || !container.children.length) {
+                showToast("내보낼 사진대지 내용이 없습니다.");
+                return;
+            }
+
+            const clone = container.cloneNode(true);
+            clone.querySelectorAll('.no-print').forEach(el => el.remove());
+
+            clone.querySelectorAll('input, textarea').forEach(input => {
+                if (input.tagName.toLowerCase() === 'textarea') {
+                    input.textContent = input.value;
+                } else {
+                    input.setAttribute('value', input.value);
+                }
+            });
+
+            const sheetsContent = clone.innerHTML;
+            const currentSiteName = document.getElementById('globalSiteName').value || '사진대지';
+
+            const fullHTML = `<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>사진대지 - ${escapeHtml(currentSiteName)}</title>
+    <script src="https://cdn.tailwindcss.com"><\/script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Noto Sans KR', sans-serif; background-color: #f1f5f9; margin: 0; padding: 16px; }
+        @page { size: A4 portrait; margin: 8mm; }
+        @media print {
+            body { background: white !important; padding: 0 !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
+            .no-print, div.no-print, span.no-print { display: none !important; }
+            .print-only, div.print-only { display: block !important; }
+            .a4-page {
+                width: 194mm !important;
+                height: 280mm !important;
+                max-height: 280mm !important;
+                box-shadow: none !important;
+                margin: 0 auto !important;
+                padding: 2mm 0 !important;
+                page-break-after: always !important;
+                border: none !important;
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: space-between !important;
+            }
+            input, textarea { border: none !important; background: transparent !important; resize: none !important; outline: none !important; color: #000 !important; }
+            .photo-badge-tag {
+                background-color: #dc2626 !important;
+                color: #ffffff !important;
+                border: 1px solid #ffffff !important;
+            }
+        }
+        .a4-preview-page {
+            width: 210mm; height: 297mm; background: white; margin: 0 auto 20px auto; padding: 8mm 10mm; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 4px 12px rgba(0,0,0,0.1); overflow: hidden;
+        }
+        .photo-card-block {
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: space-between !important;
+            flex: 1 1 0% !important;
+            min-height: 0 !important;
+            position: relative;
+        }
+        .photo-img-container {
+            flex: 1 1 0% !important;
+            min-height: 0 !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            position: relative;
+            overflow: hidden;
+        }
+        .photo-card-table {
+            flex-shrink: 0 !important;
+            width: 100% !important;
+        }
+        .photo-card-table th, .photo-card-table td { border: 1.5px solid #000 !important; }
+    </style>
+</head>
+<body>
+    <div class="no-print max-w-4xl mx-auto mb-4 p-3 bg-slate-900 text-white flex justify-between items-center rounded-lg shadow">
+        <span class="font-bold text-sm flex items-center gap-2">
+            <i class="fa-solid fa-file-image text-amber-400"></i> 현장 사진대지 문서
+        </span>
+        <button onclick="window.print()" class="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white rounded shadow">
+            <i class="fa-solid fa-print"></i> 인쇄 / PDF 출력
+        </button>
+    </div>
+    <div class="w-full flex flex-col items-center">
+        ${sheetsContent}
+    </div>
+</body>
+</html>`;
+
+            const blob = new Blob([fullHTML], { type: 'text/html;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+
+            const safeName = currentSiteName.replace(/[^a-zA-Z0-9가-힣]/g, '_');
+            const defaultName = `사진대지_${safeName}_${formatDate(new Date())}`;
+            const fileName = promptExportFilename(defaultName);
+            if (fileName === null) { URL.revokeObjectURL(url); return; }
+
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${fileName}.html`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast("독립형 HTML 파일 내보내기가 완료되었습니다.");
+        }
+
+        async function exportExcel() {
+            saveCurrentInputValues();
+            if (photoList.length === 0) {
+                showToast("내보낼 사진 데이터가 없습니다.");
+                return;
+            }
+
+            showToast("서식 적용 엑셀 파일 생성 중...");
+
+            const siteNameVal = document.getElementById('globalSiteName').value || '';
+            const authorVal = document.getElementById('globalAuthor').value || '';
+            const showAuthorVal = document.getElementById('showAuthorToggle').checked;
+            const photosPerPage = parseInt(document.getElementById('photosPerPage').value) || 2;
+
+            const workbook = new ExcelJS.Workbook();
+            const worksheet = workbook.addWorksheet('사진대지', {
+                pageSetup: { paperSize: 9, orientation: 'portrait', fitToPage: true, fitToWidth: 1, fitToHeight: 0 }
+            });
+
+            worksheet.columns = [
+                { key: 'colA', width: 14 },
+                { key: 'colB', width: 32 },
+                { key: 'colC', width: 14 },
+                { key: 'colD', width: 32 }
+            ];
+
+            const thinBorder = {
+                top: { style: 'thin' },
+                left: { style: 'thin' },
+                bottom: { style: 'thin' },
+                right: { style: 'thin' }
+            };
+
+            let currentRow = 1;
+            const totalPages = Math.ceil(photoList.length / photosPerPage);
+
+            for (let pageIdx = 0; pageIdx < totalPages; pageIdx++) {
+                const pagePhotos = photoList.slice(pageIdx * photosPerPage, (pageIdx + 1) * photosPerPage);
+
+                worksheet.mergeCells(`A${currentRow}:C${currentRow}`);
+                const siteCell = worksheet.getCell(`A${currentRow}`);
+                siteCell.value = `현장명 : ${siteNameVal}`;
+                siteCell.font = { name: '맑은 고딕', size: 11, bold: true };
+                siteCell.alignment = { vertical: 'middle', horizontal: 'left' };
+
+                if (showAuthorVal) {
+                    const authorCell = worksheet.getCell(`D${currentRow}`);
+                    authorCell.value = `작성자 : ${authorVal}`;
+                    authorCell.font = { name: '맑은 고딕', size: 10, bold: true };
+                    authorCell.alignment = { vertical: 'middle', horizontal: 'right' };
+                }
+
+                ['A', 'B', 'C', 'D'].forEach(col => {
+                    worksheet.getCell(`${col}${currentRow}`).border = { bottom: { style: 'medium' } };
+                });
+                worksheet.getRow(currentRow).height = 24;
+                currentRow++;
+
+                worksheet.mergeCells(`A${currentRow}:D${currentRow}`);
+                const titleCell = worksheet.getCell(`A${currentRow}`);
+                titleCell.value = '사 진 대 지';
+                titleCell.font = { name: '맑은 고딕', size: 16, bold: true };
+                titleCell.alignment = { vertical: 'middle', horizontal: 'center' };
+                worksheet.getRow(currentRow).height = 32;
+                currentRow++;
+
+                for (let i = 0; i < pagePhotos.length; i++) {
+                    const photo = pagePhotos[i];
+
+                    const imgStartRow = currentRow;
+                    const imgEndRow = currentRow + 11;
+                    worksheet.mergeCells(`A${imgStartRow}:D${imgEndRow}`);
+
+                    for (let r = imgStartRow; r <= imgEndRow; r++) {
+                        ['A', 'B', 'C', 'D'].forEach(c => {
+                            worksheet.getCell(`${c}${r}`).border = thinBorder;
+                        });
+                    }
+
+                    if (photo.url) {
+                        try {
+                            const base64Data = await getImageBase64(photo.url);
+                            const imageId = workbook.addImage({
+                                base64: base64Data,
+                                extension: 'jpeg'
+                            });
+                            worksheet.addImage(imageId, {
+                                tl: { col: 0, row: imgStartRow - 1 },
+                                br: { col: 4, row: imgEndRow }
+                            });
+                        } catch (err) {
+                            console.error('Image embedding error:', err);
+                        }
+                    }
+
+                    currentRow = imgEndRow + 1;
+
+                    const r1 = currentRow;
+                    worksheet.getRow(r1).height = 22;
+                    worksheet.getCell(`A${r1}`).value = '공 종';
+                    worksheet.getCell(`B${r1}`).value = photo.workType || '';
+                    worksheet.getCell(`C${r1}`).value = '날 짜';
+                    worksheet.getCell(`D${r1}`).value = photo.date || '';
+
+                    const r2 = currentRow + 1;
+                    worksheet.getRow(r2).height = 26;
+                    worksheet.getCell(`A${r2}`).value = '위 치';
+                    worksheet.getCell(`B${r2}`).value = photo.location || '';
+                    worksheet.getCell(`C${r2}`).value = '내 용';
+                    worksheet.getCell(`D${r2}`).value = photo.description || '';
+
+                    [r1, r2].forEach(r => {
+                        ['A', 'C'].forEach(c => {
+                            const cell = worksheet.getCell(`${c}${r}`);
+                            cell.font = { name: '맑은 고딕', size: 10, bold: true };
+                            cell.alignment = { vertical: 'middle', horizontal: 'center' };
+                            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'F1F5F9' } };
+                            cell.border = thinBorder;
+                        });
+                        ['B', 'D'].forEach(c => {
+                            const cell = worksheet.getCell(`${c}${r}`);
+                            cell.font = { name: '맑은 고딕', size: 10 };
+                            cell.alignment = { vertical: 'middle', horizontal: 'left', wrapText: true };
+                            cell.border = thinBorder;
+                        });
+                    });
+
+                    currentRow += 2;
+
+                    if (showExtraField) {
+                        const r3 = currentRow;
+                        worksheet.getRow(r3).height = 22;
+                        worksheet.getCell(`A${r3}`).value = extraFieldLabel || '추가정보';
+                        worksheet.getCell(`A${r3}`).font = { name: '맑은 고딕', size: 10, bold: true };
+                        worksheet.getCell(`A${r3}`).alignment = { vertical: 'middle', horizontal: 'center' };
+                        worksheet.getCell(`A${r3}`).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'F1F5F9' } };
+                        worksheet.getCell(`A${r3}`).border = thinBorder;
+
+                        worksheet.mergeCells(`B${r3}:D${r3}`);
+                        const extraCell = worksheet.getCell(`B${r3}`);
+                        extraCell.value = photo.extraValue || '';
+                        extraCell.font = { name: '맑은 고딕', size: 10 };
+                        extraCell.alignment = { vertical: 'middle', horizontal: 'left', wrapText: true };
+                        extraCell.border = thinBorder;
+                        ['B', 'C', 'D'].forEach(c => { worksheet.getCell(`${c}${r3}`).border = thinBorder; });
+
+                        currentRow += 1;
+                    }
+
+                    if (i < pagePhotos.length - 1) {
+                        worksheet.getRow(currentRow).height = 10;
+                        currentRow++;
+                    }
+                }
+
+                if (pageIdx < totalPages - 1) {
+                    worksheet.getRow(currentRow).addPageBreak();
+                    currentRow += 2;
+                }
+            }
+
+            const buffer = await workbook.xlsx.writeBuffer();
+            const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            const url = URL.createObjectURL(blob);
+
+            const safeName = siteNameVal.replace(/[^a-zA-Z0-9가-힣]/g, '_');
+            const defaultName = `사진대지_${safeName}_${formatDate(new Date())}`;
+            const fileName = promptExportFilename(defaultName);
+            if (fileName === null) { URL.revokeObjectURL(url); return; }
+
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${fileName}.xlsx`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast("서식이 적용된 엑셀(.xlsx) 파일 내보내기가 완료되었습니다.");
+        }
+
+        function getImageBase64(url) {
+            return new Promise((resolve, reject) => {
+                if (!url) return reject('No URL provided');
+                if (url.startsWith('data:image/jpeg;base64,')) {
+                    return resolve(url);
+                }
+                const img = new Image();
+                img.crossOrigin = 'Anonymous';
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+                    resolve(canvas.toDataURL('image/jpeg', 0.88));
+                };
+                img.onerror = (e) => reject(e);
+                img.src = url;
+            });
+        }
+
+        function importJSON(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const data = JSON.parse(event.target.result);
+                    if (data.siteName) document.getElementById('globalSiteName').value = data.siteName;
+                    if (data.author) document.getElementById('globalAuthor').value = data.author;
+                    if (typeof data.showAuthor !== 'undefined') {
+                        document.getElementById('showAuthorToggle').checked = data.showAuthor;
+                        showAuthor = data.showAuthor;
+                    }
+                    if (typeof data.showBadge !== 'undefined') {
+                        document.getElementById('showBadgeToggle').checked = data.showBadge;
+                        showBadge = data.showBadge;
+                    }
+                    if (typeof data.showExtraField !== 'undefined') {
+                        document.getElementById('showExtraFieldToggle').checked = data.showExtraField;
+                        showExtraField = data.showExtraField;
+                    }
+                    if (typeof data.extraFieldLabel !== 'undefined') {
+                        document.getElementById('extraFieldLabel').value = data.extraFieldLabel;
+                        extraFieldLabel = data.extraFieldLabel || "감독원";
+                    }
+                    if (data.photosPerPage) document.getElementById('photosPerPage').value = data.photosPerPage;
+                    if (data.photoList && Array.isArray(data.photoList)) {
+                        photoList = data.photoList;
+                    }
+                    renderPhotoSheets();
+                    showToast("데이터를 성공적으로 불러왔습니다.");
+                } catch (err) {
+                    showToast("올바른 JSON 파일이 아닙니다.");
+                }
+            };
+            reader.readAsText(file);
+            e.target.value = '';
+        }
+
+        function loadSampleData() {
+            const today = formatDate(new Date());
+
+            function makeSVG(title, sub, color) {
+                const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400" viewBox="0 0 600 400">
+                    <rect width="600" height="400" fill="${color}"/>
+                    <circle cx="300" cy="180" r="85" fill="#ffffff" opacity="0.15"/>
+                    <path d="M 80 340 L 220 180 L 340 280 L 520 110 L 560 340 Z" fill="#ffffff" opacity="0.25"/>
+                    <text x="300" y="190" font-family="sans-serif" font-size="28" font-weight="bold" fill="#ffffff" text-anchor="middle">${title}</text>
+                    <text x="300" y="230" font-family="sans-serif" font-size="16" fill="#cbd5e1" text-anchor="middle">${sub}</text>
+                </svg>`;
+                return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+            }
+
+            photoList = [
+                {
+                    id: 'sample_1',
+                    url: makeSVG('1. 토공사 굴착 작업', '[현장 터파기 규격 검측]', '#0f172a'),
+                    originalUrl: '',
+                    workType: '토공사',
+                    date: today,
+                    location: 'STA 0+050 ~ 0+080',
+                    description: '공사구역 굴착 깊이 H=3.0m 상태 점검 및 법면 보호 공정 확인 완료.',
+                    badge: '시공중',
+                    rotation: 0
+                },
+                {
+                    id: 'sample_2',
+                    url: makeSVG('2. 배수관로(PE관) 매설', '[배수구조물 관로 부설]', '#0f766e'),
+                    originalUrl: '',
+                    workType: '배수공사',
+                    date: today,
+                    location: 'STA 0+120 (D=800mm)',
+                    description: '고밀도 PE 배수관 경사도(i=2.0%) 구배 검측 및 기초 모래 타설 상태 점검.',
+                    badge: '시공중',
+                    rotation: 0
+                },
+                {
+                    id: 'sample_3',
+                    url: makeSVG('3. 옹벽 구조물 철근 배근', '[철근 간격 및 피복두께 검측]', '#1e3a8a'),
+                    originalUrl: '',
+                    workType: '구조물공사',
+                    date: today,
+                    location: 'L형 옹벽 구간 (H=4.0m)',
+                    description: '주철근 간격(CTC 150mm) 및 결속 상태 검측, 피복 두께 80mm 확보 확인.',
+                    badge: '시공전',
+                    rotation: 0
+                },
+                {
+                    id: 'sample_4',
+                    url: makeSVG('4. 아스콘 포장 및 전압', '[도로 표층 아스콘 부설]', '#b45309'),
+                    originalUrl: '',
+                    workType: '포장공사',
+                    date: today,
+                    location: 'STA 0+200 ~ 0+350',
+                    description: '아스팔트 콘크리트 표층 포장(t=5cm) 타설 온도시험(155℃) 및 롤러 다짐 작업.',
+                    badge: '시공후',
+                    rotation: 0
+                }
+            ];
+
+            renderPhotoSheets();
+            showToast("샘플 예제 데이터가 로드되었습니다.");
+        }
+
+        function formatDate(date) {
+            const d = new Date(date);
+            let month = '' + (d.getMonth() + 1);
+            let day = '' + d.getDate();
+            const year = d.getFullYear();
+
+            if (month.length < 2) month = '0' + month;
+            if (day.length < 2) day = '0' + day;
+
+            return [year, month, day].join('-');
+        }
+
+        // 내용 문구가 칸을 넘치면 폰트 크기를 자동으로 축소해서 잘리지 않도록 처리
+        function autoFitDescription(el) {
+            if (!el) return;
+            const minSize = 8; // px
+            const maxSize = 12; // px (text-xs 기준)
+            el.style.fontSize = maxSize + 'px';
+            let currentSize = maxSize;
+            let guard = 0;
+            while (el.scrollHeight > el.clientHeight + 1 && currentSize > minSize && guard < 20) {
+                currentSize -= 0.5;
+                el.style.fontSize = currentSize + 'px';
+                guard++;
+            }
+        }
+
+        // 렌더링 직후 모든 내용 textarea에 자동맞춤 재적용
+        function autoFitAllDescriptions() {
+            document.querySelectorAll('.auto-fit-desc').forEach(autoFitDescription);
+        }
+
+        // 파일 내보내기 시 사용자로부터 파일명을 입력받는 공통 헬퍼
+        // 취소하면 null 반환, 입력하면 확장자 제외 파일명을 안전하게 정제해 반환
+        function promptExportFilename(defaultName) {
+            const input = window.prompt("저장할 파일명을 입력하세요 (확장자 제외)", defaultName);
+            if (input === null) return null; // 사용자가 취소함
+            const trimmed = input.trim();
+            const finalName = trimmed === '' ? defaultName : trimmed;
+            // 파일 시스템에서 문제되는 문자만 언더스코어로 치환 (한글, 영문, 숫자, 공백, - _ 허용)
+            return finalName.replace(/[\\/:*?"<>|]/g, '_');
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/&/g, "&amp;")
+                      .replace(/</g, "&lt;")
+                      .replace(/>/g, "&gt;")
+                      .replace(/"/g, "&quot;")
+                      .replace(/'/g, "&#039;");
+        }
+
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.className = 'fixed bottom-5 right-5 bg-slate-900 text-white text-xs px-4 py-2.5 rounded-xl shadow-2xl z-50 transition-opacity duration-300 font-bold border border-slate-700 flex items-center gap-2';
+            toast.innerHTML = `<i class="fa-solid fa-circle-check text-amber-400"></i> ${message}`;
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 300);
+            }, 2500);
+        }
+    </script>
+</body>
+</html>

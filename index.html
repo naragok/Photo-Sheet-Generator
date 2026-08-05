@@ -1675,13 +1675,13 @@
 
             // 기존 배치(공종+날짜 한 행, 위치+내용 한 행)를 유지하면서 숨김 처리
             const pairs = [
-                [workTypeCell, dateCell, workTypeLabelW + workTypeValueW],
-                [locationCell, descriptionCell, locationLabelW + locationValueW]
+                [workTypeCell, dateCell, workTypeLabelW, dateLabelW],
+                [locationCell, descriptionCell, locationLabelW, descriptionLabelW]
             ];
             let rowsHTML = '';
 
             pairs.forEach((pair, pairIdx) => {
-                const [left, right, leftTotalW] = pair;
+                const [left, right, leftLabelW, rightLabelW] = pair;
                 const leftVisible = left.visible;
                 const rightVisible = right.visible;
                 if (!leftVisible && !rightVisible) return; // 둘 다 숨김이면 행 자체를 생략
@@ -1691,12 +1691,12 @@
                 if (leftVisible && rightVisible) {
                     rowsHTML += `<tr class="${rowHeightClass}">${left.label}${left.value}${right.label}${right.value}</tr>`;
                 } else if (leftVisible && !rightVisible) {
-                    // 오른쪽이 숨겨지면 왼쪽 값 칸이 이 줄의 나머지 폭(라벨 제외 100%)을 모두 차지
+                    // 오른쪽이 숨겨지면 왼쪽 값 칸이 이 줄의 나머지 폭(왼쪽 라벨 제외 100%)을 모두 차지
                     const valueContent = left.value.replace(/^<td[^>]*>/, '').replace(/<\/td>$/, '');
-                    rowsHTML += `<tr class="${rowHeightClass}">${left.label}<td style="width: ${100 - leftTotalW}%;" class="border border-black p-0.5" colspan="3">${valueContent}</td></tr>`;
+                    rowsHTML += `<tr class="${rowHeightClass}">${left.label}<td style="width: ${100 - leftLabelW}%;" class="border border-black p-0.5" colspan="3">${valueContent}</td></tr>`;
                 } else {
                     const valueContent = right.value.replace(/^<td[^>]*>/, '').replace(/<\/td>$/, '');
-                    rowsHTML += `<tr class="${rowHeightClass}">${right.label}<td style="width: ${100 - leftTotalW}%;" class="border border-black p-0.5" colspan="3">${valueContent}</td></tr>`;
+                    rowsHTML += `<tr class="${rowHeightClass}">${right.label}<td style="width: ${100 - rightLabelW}%;" class="border border-black p-0.5" colspan="3">${valueContent}</td></tr>`;
                 }
             });
 

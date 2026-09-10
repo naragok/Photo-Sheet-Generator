@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>토목 현장 사진대지 작성 프로그램 V1.4</title>
+    <title>토목 현장 사진대지 작성 프로그램 V2.1</title>
 
     <!-- ===== PWA: Web App Manifest & Favicons ===== -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='512' height='512' viewBox='0 0 512 512'><rect width='512' height='512' rx='100' fill='%230f172a'/><circle cx='256' cy='256' r='220' fill='%231e293b'/><path d='M256 110 C160 110 110 180 110 250 L402 250 C402 180 352 110 256 110 Z' fill='%23f59e0b'/><rect x='80' y='240' width='352' height='32' rx='10' fill='%23d97706'/><rect x='236' y='110' width='40' height='140' fill='%23fbbf24'/><path d='M160 300 H352 V410 H160 Z' fill='%23ffffff' opacity='0.9'/><path d='M180 320 L240 370 L290 335 L332 375 H180 Z' fill='%230f172a'/><circle cx='310' cy='330' r='14' fill='%23f59e0b'/></svg>">
@@ -511,7 +511,7 @@
                     <h1 class="font-black text-lg leading-tight flex items-center gap-2 text-slate-100 tracking-tight truncate">
                         토목 현장 사진대지 작성기
                         <span class="hidden md:inline text-[10px] bg-amber-500/20 text-amber-400 border border-amber-500/40 px-2 py-0.5 rounded-full font-bold tracking-wider uppercase shrink-0">Pro Ultimate</span>
-                        <span class="hidden md:inline text-[10px] bg-slate-700/60 text-slate-300 border border-slate-600/60 px-2 py-0.5 rounded-full font-bold tracking-wider shrink-0">V1.4</span>
+                        <span class="hidden md:inline text-[10px] bg-slate-700/60 text-slate-300 border border-slate-600/60 px-2 py-0.5 rounded-full font-bold tracking-wider shrink-0">V2.1</span>
                     </h1>
                     <p class="hidden sm:block text-[11px] text-slate-400 font-medium truncate">Civil Engineering Site Photo Sheet Generator</p>
                 </div>
@@ -538,8 +538,8 @@
                     <i class="fa-solid fa-file-circle-plus"></i> 빈 페이지
                 </button>
 
-                <button onclick="openPhraseModal()" class="px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-xs font-bold text-white rounded-xl transition flex items-center gap-1.5 shadow-sm" title="자주 쓰는 표준 문구 모음">
-                    <i class="fa-solid fa-book-bookmark"></i> 문구 보관함
+                <button onclick="openPhraseModal()" class="px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-xs font-bold text-white rounded-xl transition flex items-center gap-1.5 shadow-sm" title="자주 쓰는 공정(공종) & 표준 문구 모음">
+                    <i class="fa-solid fa-book-bookmark"></i> 공정·문구 보관함
                 </button>
 
                 <div class="flex items-center bg-slate-800/90 p-1 rounded-xl border border-slate-700/70 space-x-1 shadow-inner">
@@ -615,6 +615,7 @@
 
     <input type="file" id="imageInput" multiple accept="image/*" class="hidden" onchange="handleImageUpload(event)">
     <input type="file" id="cardImageInput" accept="image/*" class="hidden" onchange="handleCardImageUpload(event)">
+    <input type="file" id="siteMapFileInput" accept="image/*" class="hidden" onchange="handleSiteMapUpload(event)">
 
     <!-- Main Content Area -->
     <main class="flex-1 max-w-[1800px] w-full mx-auto p-4 flex flex-col gap-4 items-center">
@@ -629,12 +630,20 @@
                 <input type="date" id="photoSearchDateTo" onchange="applyPhotoFilter()" title="종료일" class="px-2 py-1.5 border border-slate-300 rounded-lg text-xs outline-none focus:ring-2 focus:ring-amber-500/50">
                 
                 <div class="flex items-center gap-1 border-l border-slate-200 pl-2 shrink-0">
+                    <i class="fa-solid fa-diagram-project text-teal-500 text-xs"></i>
+                    <select id="photoWorkTypeFilter" onchange="applyPhotoFilter()" class="px-2 py-1.5 border border-slate-300 rounded-lg text-xs outline-none font-bold text-slate-700 bg-slate-50/80 hover:bg-white focus:ring-2 focus:ring-teal-500/50 cursor-pointer max-w-[140px]">
+                        <option value="" selected>공종: 전체 표시</option>
+                    </select>
+                </div>
+
+                <div class="flex items-center gap-1 border-l border-slate-200 pl-2 shrink-0">
                     <i class="fa-solid fa-arrow-down-short-wide text-amber-500 text-xs"></i>
                     <select id="photoSortSelect" onchange="sortPhotos(this.value)" class="px-2 py-1.5 border border-slate-300 rounded-lg text-xs outline-none font-bold text-slate-700 bg-slate-50/80 hover:bg-white focus:ring-2 focus:ring-amber-500/50 cursor-pointer">
                         <option value="default" selected>정렬: 등록순 (기본)</option>
                         <option value="dateAsc">촬영일자 (오름차순 ⬆)</option>
                         <option value="dateDesc">촬영일자 (내림차순 ⬇)</option>
                         <option value="workType">공종명 (가나다순)</option>
+                        <option value="workTypeOrder">공종 지정순서 (등록함 순서)</option>
                         <option value="location">위치/측점순</option>
                     </select>
                 </div>
@@ -728,6 +737,9 @@
                 </button>
                 <button onclick="switchSettingsTab('batch')" id="tab_batch" class="settings-tab-btn px-3.5 py-1.5 rounded-xl transition flex items-center gap-1.5 bg-white text-slate-600 hover:bg-slate-200 border border-slate-200 shrink-0">
                     <i class="fa-solid fa-bolt text-purple-500"></i> 일괄 입력
+                </button>
+                <button onclick="switchSettingsTab('completion')" id="tab_completion" class="settings-tab-btn px-3.5 py-1.5 rounded-xl transition flex items-center gap-1.5 bg-white text-slate-600 hover:bg-slate-200 border border-slate-200 shrink-0">
+                    <i class="fa-solid fa-flag-checkered text-emerald-500"></i> 준공모드
                 </button>
             </div>
 
@@ -1077,6 +1089,44 @@
                         </div>
                     </div>
 
+                    <!-- Box 4.5: 준공모드 -->
+                    <div id="sec_completion_mode" class="settings-section bg-slate-50 p-4 rounded-2xl border border-slate-200/90 space-y-3 shadow-sm md:col-span-2">
+                        <div class="flex items-center justify-between border-b border-slate-200/80 pb-2">
+                            <h2 class="text-xs font-extrabold uppercase tracking-wider text-slate-800 flex items-center gap-2">
+                                <span class="w-6 h-6 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs">
+                                    <i class="fa-solid fa-flag-checkered"></i>
+                                </span>
+                                준공모드
+                            </h2>
+                            <label class="inline-flex items-center gap-1.5 cursor-pointer text-xs text-slate-700 font-bold select-none">
+                                <input type="checkbox" id="completionModeToggle" onchange="toggleCompletionMode(this.checked)" class="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500">
+                                준공모드 사용
+                            </label>
+                        </div>
+
+                        <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
+                            <label class="block font-bold text-slate-800 mb-1 text-xs">① 착공전·시공중·준공후 3단 비교</label>
+                            <p class="text-[10px] text-slate-400 mb-2">준공모드를 켜면 모든 사진 카드가 3분할 비교 레이아웃으로 표시됩니다. 각 칸을 클릭해 사진을 각각 등록하세요.</p>
+                        </div>
+
+                        <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm space-y-2">
+                            <div class="flex items-center justify-between">
+                                <label class="font-bold text-slate-800 text-xs">③ 위치도(배치도) & 촬영지점 핀</label>
+                                <label class="inline-flex items-center gap-1.5 cursor-pointer text-[11px] text-slate-600 font-bold select-none">
+                                    <input type="checkbox" id="showSiteMapToggle" onchange="toggleSiteMapDisplay(this.checked)" class="w-3.5 h-3.5 text-emerald-600 rounded border-slate-300">
+                                    위치도 페이지 추가
+                                </label>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button onclick="triggerSiteMapFileInput()" class="flex-1 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg text-xs font-bold text-slate-700 transition flex items-center justify-center gap-1.5">
+                                    <i class="fa-solid fa-map"></i> <span id="siteMapUploadLabel">위치도 이미지 업로드</span>
+                                </button>
+                                <button onclick="clearSiteMap()" title="위치도 삭제" class="w-8 h-8 flex items-center justify-center bg-white hover:bg-rose-50 border border-slate-300 hover:border-rose-300 text-slate-400 hover:text-rose-600 rounded-lg transition"><i class="fa-solid fa-trash text-xs"></i></button>
+                            </div>
+                            <p class="text-[10px] text-slate-400">위치도 업로드 후, 각 사진 카드의 📍 아이콘을 눌러 지도 위에 촬영지점을 찍어보세요.</p>
+                        </div>
+                    </div>
+
                     <!-- Box 5: Batch Entry Tools -->
                     <div id="sec_batch_tools" class="settings-section bg-slate-50 p-4 rounded-2xl border border-slate-200/90 space-y-3 shadow-sm md:col-span-2">
                         <div class="flex items-center justify-between border-b border-slate-200/80 pb-2">
@@ -1262,16 +1312,72 @@
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
-            
-            <p class="text-[11px] text-slate-400 font-medium mb-3 shrink-0">자주 사용하는 현장 설명 문구를 등록하고, 사진 카드에 클릭 한 번으로 적용해 보세요.</p>
 
-            <div id="phraseList" class="flex-1 overflow-y-auto space-y-2 pr-1 min-h-[120px]">
+            <div class="flex-1 overflow-y-auto pr-1 space-y-4">
+                <div>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <p class="text-[11px] text-slate-500 font-bold flex items-center gap-1.5">
+                            <i class="fa-solid fa-diagram-project text-teal-500"></i> 공정(공종) 등록
+                        </p>
+                        <span class="text-[10px] text-slate-400 font-medium">클릭 시 적용 · ▲▼로 순서 지정</span>
+                    </div>
+                    <div id="workTypeChipList" class="space-y-1.5 min-h-[36px]">
+                    </div>
+                    <div class="mt-2 flex gap-2">
+                        <input type="text" id="newWorkTypeInput" placeholder="새 공정명 입력 (예: 배수관로공사)" class="flex-1 px-3 py-1.5 border border-slate-300 rounded-xl text-xs outline-none focus:ring-2 focus:ring-teal-500/50">
+                        <button onclick="addNewWorkType()" class="px-3.5 py-1.5 bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs rounded-xl shadow transition shrink-0">
+                            공정 추가
+                        </button>
+                    </div>
+                </div>
+
+                <div class="pt-3.5 border-t border-slate-100">
+                    <p class="text-[11px] text-slate-500 font-bold mb-1.5 flex items-center gap-1.5">
+                        <i class="fa-solid fa-comment-dots text-purple-500"></i> 표준 문구 (내용란에 적용)
+                    </p>
+                    <div id="phraseList" class="space-y-2 min-h-[80px]">
+                    </div>
+                    <div class="mt-2 flex gap-2">
+                        <input type="text" id="newPhraseInput" placeholder="새 표준 문구 입력..." class="flex-1 px-3 py-2 border border-slate-300 rounded-xl text-xs outline-none focus:ring-2 focus:ring-purple-500/50">
+                        <button onclick="addNewPhrase()" class="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs rounded-xl shadow transition shrink-0">
+                            문구 추가
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Site Map Pin Placement Modal -->
+    <div id="siteMapPinModal" class="fixed inset-0 bg-slate-950/70 z-50 flex items-center justify-center hidden backdrop-blur-sm no-print p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-5 max-h-[90vh] flex flex-col">
+            <div class="flex items-center justify-between mb-3 border-b border-slate-100 pb-2.5 shrink-0">
+                <h3 class="font-extrabold text-sm text-slate-800 flex items-center gap-2">
+                    <span class="w-6 h-6 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs">
+                        <i class="fa-solid fa-location-dot"></i>
+                    </span>
+                    위치도에 촬영지점 표시
+                </h3>
+                <button onclick="closeSiteMapPinModal()" class="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
             </div>
 
-            <div class="mt-3 pt-3 border-t border-slate-100 flex gap-2 shrink-0">
-                <input type="text" id="newPhraseInput" placeholder="새 표준 문구 입력..." class="flex-1 px-3 py-2 border border-slate-300 rounded-xl text-xs outline-none focus:ring-2 focus:ring-purple-500/50">
-                <button onclick="addNewPhrase()" class="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs rounded-xl shadow transition">
-                    문구 추가
+            <p class="text-[11px] text-slate-500 font-bold mb-2 shrink-0">지도 위 원하는 위치를 클릭하면 이 사진의 촬영지점(빨간 핀)이 등록됩니다.</p>
+
+            <div class="flex-1 overflow-auto">
+                <div class="relative inline-block max-w-full">
+                    <img id="siteMapPinImage" src="" onclick="handleSiteMapImageClick(event)" class="max-w-full h-auto cursor-crosshair rounded-lg border border-slate-200 select-none" draggable="false">
+                    <div id="siteMapPinOverlay" class="absolute inset-0 pointer-events-none"></div>
+                </div>
+            </div>
+
+            <div class="mt-3 pt-3 border-t border-slate-100 flex justify-end gap-2 shrink-0">
+                <button onclick="removePinForPhoto(pinTargetPhotoId); closeSiteMapPinModal();" class="px-3.5 py-1.5 bg-white hover:bg-rose-50 border border-slate-300 hover:border-rose-300 text-slate-500 hover:text-rose-600 font-bold text-xs rounded-xl transition">
+                    이 사진 핀 제거
+                </button>
+                <button onclick="closeSiteMapPinModal()" class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow transition">
+                    완료
                 </button>
             </div>
         </div>
@@ -1537,6 +1643,15 @@
             const elTocStyle = document.getElementById('tocStyleSelect');
             if (elTocStyle) elTocStyle.value = tocStyle;
 
+            const elCompletionMode = document.getElementById('completionModeToggle');
+            if (elCompletionMode) elCompletionMode.checked = completionMode;
+
+            const elShowSiteMap = document.getElementById('showSiteMapToggle');
+            if (elShowSiteMap) elShowSiteMap.checked = showSiteMap;
+
+            const elSiteMapLabel = document.getElementById('siteMapUploadLabel');
+            if (elSiteMapLabel) elSiteMapLabel.innerText = siteMapUrl ? '위치도 이미지 변경' : '위치도 이미지 업로드';
+
             const elShowIndex = document.getElementById('showIndexNumberToggle');
             if (elShowIndex) elShowIndex.checked = showIndexNumber;
 
@@ -1634,7 +1749,8 @@
                 site: ['sec_site_info', 'sec_cover_page'],
                 display: ['sec_chalkboard', 'sec_photo_fit'],
                 fields: ['sec_field_opts'],
-                batch: ['sec_batch_tools']
+                batch: ['sec_batch_tools'],
+                completion: ['sec_completion_mode']
             };
 
             document.querySelectorAll('.settings-section').forEach(sec => {
@@ -1666,6 +1782,19 @@
             modal.classList.add('hidden');
             modal.classList.remove('flex');
         }
+
+        // 준공모드 (착공전/시공중/준공후 3단 비교 카드)
+        let completionMode = false;
+
+        // 위치도(배치도) + 촬영지점 핀
+        let siteMapUrl = null;
+        let showSiteMap = false;
+        let pinTargetPhotoId = null;
+
+        // Standard Work Type (공종) Library
+        let standardWorkTypes = [
+            "토공사", "배수공사", "포장공사", "구조물공사", "조경공사", "가시설공사"
+        ];
 
         // Standard Phrase Library
         let standardPhrases = [
@@ -1852,6 +1981,10 @@
                 chalkboardTheme: chalkboardTheme,
                 showCoverPage: showCoverPage,
                 coverStyle: document.getElementById('coverStyleSelect') ? document.getElementById('coverStyleSelect').value : coverStyle,
+                standardWorkTypes: standardWorkTypes,
+                completionMode: document.getElementById('completionModeToggle') ? document.getElementById('completionModeToggle').checked : completionMode,
+                siteMapUrl: siteMapUrl,
+                showSiteMap: document.getElementById('showSiteMapToggle') ? document.getElementById('showSiteMapToggle').checked : showSiteMap,
                 coverMainTitle: coverMainTitle,
                 showCoverSiteName: showCoverSiteName,
                 showCoverClient: showCoverClient,
@@ -1962,6 +2095,22 @@
             if (data.coverStyle !== undefined) {
                 coverStyle = data.coverStyle || 'classic';
                 if (document.getElementById('coverStyleSelect')) document.getElementById('coverStyleSelect').value = coverStyle;
+            }
+            if (data.standardWorkTypes !== undefined && Array.isArray(data.standardWorkTypes)) {
+                standardWorkTypes = data.standardWorkTypes;
+            }
+            if (data.completionMode !== undefined) {
+                completionMode = data.completionMode;
+                if (document.getElementById('completionModeToggle')) document.getElementById('completionModeToggle').checked = completionMode;
+            }
+            if (data.siteMapUrl !== undefined) {
+                siteMapUrl = data.siteMapUrl;
+                const labelEl = document.getElementById('siteMapUploadLabel');
+                if (labelEl) labelEl.innerText = siteMapUrl ? '위치도 이미지 변경' : '위치도 이미지 업로드';
+            }
+            if (data.showSiteMap !== undefined) {
+                showSiteMap = data.showSiteMap;
+                if (document.getElementById('showSiteMapToggle')) document.getElementById('showSiteMapToggle').checked = showSiteMap;
             }
             if (data.coverMainTitle !== undefined) {
                 coverMainTitle = data.coverMainTitle;
@@ -2152,12 +2301,153 @@
 
         function openPhraseModal(targetPhotoId) {
             window.__targetPhrasePhotoId = targetPhotoId || null;
+            renderWorkTypeChips();
             renderPhraseList();
             const modal = document.getElementById('phraseModal');
             if (modal) {
                 modal.classList.remove('hidden');
                 modal.classList.add('flex');
             }
+        }
+
+        let editingWorkTypeIdx = null;
+
+        function renderWorkTypeChips() {
+            const listEl = document.getElementById('workTypeChipList');
+            if (!listEl) return;
+            listEl.innerHTML = standardWorkTypes.map((wt, idx) => {
+                if (editingWorkTypeIdx === idx) {
+                    return `
+                        <div class="flex items-center gap-2 p-1.5 bg-teal-50 border border-teal-300 ring-2 ring-teal-300 rounded-xl text-xs">
+                            <span class="w-5 h-5 flex items-center justify-center bg-teal-600 text-white font-black rounded-full text-[10px] shrink-0">${idx + 1}</span>
+                            <input type="text" id="editWorkTypeInput_${idx}" value="${escapeHtml(wt)}"
+                                   onkeydown="if(event.key==='Enter'){saveWorkTypeEdit(${idx});} else if(event.key==='Escape'){cancelWorkTypeEdit();}"
+                                   class="flex-1 min-w-0 px-1.5 py-0.5 border border-teal-300 rounded-lg outline-none font-bold text-teal-900 bg-white">
+                            <div class="flex items-center gap-0.5 shrink-0">
+                                <button onclick="saveWorkTypeEdit(${idx})" title="저장" class="w-5 h-5 flex items-center justify-center text-emerald-600 hover:text-emerald-800"><i class="fa-solid fa-check text-[10px]"></i></button>
+                                <button onclick="cancelWorkTypeEdit()" title="취소" class="w-5 h-5 flex items-center justify-center text-slate-400 hover:text-rose-600"><i class="fa-solid fa-xmark text-[10px]"></i></button>
+                            </div>
+                        </div>
+                    `;
+                }
+                return `
+                    <div class="flex items-center gap-2 p-1.5 bg-teal-50 border border-teal-200 rounded-xl text-xs">
+                        <span class="w-5 h-5 flex items-center justify-center bg-teal-600 text-white font-black rounded-full text-[10px] shrink-0">${idx + 1}</span>
+                        <button type="button" onclick="applyWorkTypeToCard(${idx})" title="클릭하여 현재 사진 카드에 적용" class="flex-1 min-w-0 text-left font-bold text-teal-800 hover:text-teal-900 truncate">${escapeHtml(wt)}</button>
+                        <div class="flex items-center gap-0.5 shrink-0">
+                            <button onclick="startWorkTypeEdit(${idx})" title="이름 수정" class="w-5 h-5 flex items-center justify-center text-teal-500 hover:text-teal-800"><i class="fa-solid fa-pen text-[10px]"></i></button>
+                            <button onclick="moveWorkType(${idx}, -1)" title="순서 위로" ${idx === 0 ? 'disabled' : ''} class="w-5 h-5 flex items-center justify-center text-teal-500 hover:text-teal-800 disabled:opacity-20 disabled:cursor-not-allowed"><i class="fa-solid fa-chevron-up text-[10px]"></i></button>
+                            <button onclick="moveWorkType(${idx}, 1)" title="순서 아래로" ${idx === standardWorkTypes.length - 1 ? 'disabled' : ''} class="w-5 h-5 flex items-center justify-center text-teal-500 hover:text-teal-800 disabled:opacity-20 disabled:cursor-not-allowed"><i class="fa-solid fa-chevron-down text-[10px]"></i></button>
+                            <button onclick="deleteWorkType(${idx})" title="공정 삭제" class="w-5 h-5 flex items-center justify-center text-slate-400 hover:text-rose-600"><i class="fa-solid fa-xmark text-[10px]"></i></button>
+                        </div>
+                    </div>
+                `;
+            }).join('') || `<p class="text-[11px] text-slate-400 py-2">등록된 공정이 없습니다. 아래에서 추가해 보세요.</p>`;
+
+            if (editingWorkTypeIdx !== null) {
+                const inputEl = document.getElementById(`editWorkTypeInput_${editingWorkTypeIdx}`);
+                if (inputEl) { inputEl.focus(); inputEl.select(); }
+            }
+        }
+
+        function startWorkTypeEdit(idx) {
+            editingWorkTypeIdx = idx;
+            renderWorkTypeChips();
+        }
+
+        function cancelWorkTypeEdit() {
+            editingWorkTypeIdx = null;
+            renderWorkTypeChips();
+        }
+
+        function saveWorkTypeEdit(idx) {
+            const inputEl = document.getElementById(`editWorkTypeInput_${idx}`);
+            if (!inputEl) return;
+            const newValue = inputEl.value.trim();
+            if (!newValue) {
+                showToast("공정명을 입력해 주세요.");
+                return;
+            }
+
+            const oldValue = (standardWorkTypes[idx] || '').trim();
+            standardWorkTypes[idx] = newValue;
+            editingWorkTypeIdx = null;
+            renderWorkTypeChips();
+            scheduleAutoSave();
+
+            if (oldValue && oldValue !== newValue) {
+                const affected = photoList.filter(p => (p.workType || '').trim() === oldValue);
+                if (affected.length > 0) {
+                    pendingConfirmCallback = () => {
+                        affected.forEach(p => { p.workType = newValue; });
+                        renderPhotoSheets();
+                        showToast(`공정명이 수정되었습니다. (사진 ${affected.length}장에도 반영됨)`);
+                    };
+                    const modal = document.getElementById('customConfirmModal');
+                    const titleEl = document.getElementById('confirmTitle');
+                    const msgEl = document.getElementById('confirmMessage');
+                    if (titleEl) titleEl.innerText = "사진 카드 공종도 함께 변경";
+                    if (msgEl) msgEl.innerHTML = `"${escapeHtml(oldValue)}"(을)를 사용 중인 사진 <b>${affected.length}장</b>이 있습니다.<br>공종을 "${escapeHtml(newValue)}"(으)로 함께 변경할까요?`;
+                    if (modal) modal.classList.remove('hidden');
+                    return;
+                }
+            }
+
+            showToast("공정명이 수정되었습니다.");
+        }
+
+        function moveWorkType(idx, direction) {
+            const newIdx = idx + direction;
+            if (newIdx < 0 || newIdx >= standardWorkTypes.length) return;
+            const temp = standardWorkTypes[idx];
+            standardWorkTypes[idx] = standardWorkTypes[newIdx];
+            standardWorkTypes[newIdx] = temp;
+            renderWorkTypeChips();
+            scheduleAutoSave();
+        }
+
+        function applyWorkTypeToCard(idx) {
+            const workType = standardWorkTypes[idx];
+            if (workType === undefined) return;
+
+            const photoId = window.__targetPhrasePhotoId;
+            if (!photoId) {
+                showToast("적용할 사진 카드를 먼저 선택해 주세요. 사진 카드의 공종 입력란 옆 아이콘을 누르면 바로 적용됩니다.");
+                return;
+            }
+
+            const photo = photoList.find(p => p.id === photoId);
+            if (!photo) {
+                showToast("대상 사진 카드를 찾을 수 없습니다.");
+                return;
+            }
+
+            const input = document.getElementById(`wt_${photoId}`);
+            photo.workType = workType;
+            if (input) {
+                input.value = workType;
+                input.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+
+            scheduleAutoSave();
+            closePhraseModal();
+            showToast("공정(공종)이 사진 카드에 적용되었습니다.");
+        }
+
+        function addNewWorkType() {
+            const input = document.getElementById('newWorkTypeInput');
+            if (!input || !input.value.trim()) return;
+            standardWorkTypes.push(input.value.trim());
+            input.value = '';
+            renderWorkTypeChips();
+            scheduleAutoSave();
+            showToast("새 공정(공종)이 등록되었습니다.");
+        }
+
+        function deleteWorkType(idx) {
+            standardWorkTypes.splice(idx, 1);
+            renderWorkTypeChips();
+            scheduleAutoSave();
         }
 
         function closePhraseModal() {
@@ -2323,8 +2613,54 @@
             if (imageInput) imageInput.click();
         }
 
-        function triggerCardFileInput(id) {
+        let targetCardPhotoSlot = null; // null(기본/after) | 'before' | 'during'
+
+        function buildPhotoImagePanelHTML(photo, slot, url, label) {
+            return `
+                <div class="flex-1 h-full min-w-0 relative border-r border-black last:border-r-0 overflow-hidden flex items-center justify-center bg-slate-50">
+                    <div class="absolute top-1 left-1 z-10 bg-slate-900/80 text-white text-[9px] font-black px-1.5 py-0.5 rounded no-print-label">${label}</div>
+                    ${url ? `<img src="${url}" style="object-fit: cover;" class="w-full h-full" alt="${label}">` : `
+                        <div onclick="triggerCardFileInput('${photo.id}', '${slot || ''}')" class="w-full h-full flex flex-col items-center justify-center text-slate-400 cursor-pointer no-print hover:bg-amber-50/50 hover:text-amber-600 transition">
+                            <i class="fa-solid fa-cloud-arrow-up text-base mb-0.5"></i>
+                            <span class="text-[9px] font-bold">${label} 등록</span>
+                        </div>
+                        <div class="hidden print-only text-slate-300 text-[9px] font-semibold">${label} 미등록</div>
+                    `}
+                </div>
+            `;
+        }
+
+        function buildPhotoImageAreaHTML(photo, fitMode) {
+            if (completionMode) {
+                return `
+                    <div class="photo-img-container w-full flex-1 min-h-0 bg-slate-50 border border-black overflow-hidden flex flex-row mb-1 relative">
+                        ${photo.badge && photo.badge.trim() ? `<div class="photo-badge-tag absolute top-2 left-2 z-20 bg-red-600 text-white font-black text-xs px-2.5 py-1 rounded shadow-md border border-white max-w-[85%] break-words ${!showBadge ? 'no-print' : ''}">${escapeHtml(photo.badge.trim())}</div>` : ''}
+                        ${buildPhotoImagePanelHTML(photo, 'before', photo.beforeUrl, '착공전')}
+                        ${buildPhotoImagePanelHTML(photo, 'during', photo.duringUrl, '시공중')}
+                        ${buildPhotoImagePanelHTML(photo, null, photo.url, '준공후')}
+                    </div>
+                `;
+            }
+
+            return `
+                <div class="photo-img-container w-full flex-1 min-h-0 bg-slate-50 border border-black overflow-hidden flex items-center justify-center relative mb-1">
+                    ${photo.badge && photo.badge.trim() ? `<div class="photo-badge-tag absolute top-2 left-2 z-10 bg-red-600 text-white font-black text-xs px-2.5 py-1 rounded shadow-md border border-white max-w-[85%] break-words ${!showBadge ? 'no-print' : ''}">${escapeHtml(photo.badge.trim())}</div>` : ''}
+                    ${buildChalkboardHTML(photo)}
+                    ${photo.url ? `<img src="${photo.url}" style="transform: rotate(${photo.rotation}deg); object-fit: ${fitMode};" class="w-full h-full max-h-full transition-transform duration-200" alt="공사 현장 사진">` : `
+                        <div onclick="triggerCardFileInput('${photo.id}')" class="w-full h-full flex flex-col items-center justify-center text-slate-400 cursor-pointer no-print hover:bg-amber-50/50 hover:text-amber-600 transition group/blank">
+                            <i class="fa-solid fa-cloud-arrow-up text-2xl mb-1 group-hover/blank:scale-110 transition-transform"></i>
+                            <span class="text-xs font-bold">클릭하여 사진 선택/등록</span>
+                            <span class="text-[10px] text-slate-400 font-normal mt-0.5">또는 탐색기에서 사진 파일 드래그</span>
+                        </div>
+                        <div class="hidden print-only text-slate-300 text-xs font-semibold">사진 미등록</div>
+                    `}
+                </div>
+            `;
+        }
+
+        function triggerCardFileInput(id, slot) {
             targetCardPhotoId = id;
+            targetCardPhotoSlot = slot || null;
             const cardInput = document.getElementById('cardImageInput');
             if (cardInput) {
                 cardInput.value = '';
@@ -2346,6 +2682,17 @@
             };
             const preset = COMPRESS_PRESETS[qualitySetting] || COMPRESS_PRESETS.normal;
 
+            function assignSlotImage(photo, compressedUrl) {
+                if (targetCardPhotoSlot === 'before') {
+                    photo.beforeUrl = compressedUrl;
+                } else if (targetCardPhotoSlot === 'during') {
+                    photo.duringUrl = compressedUrl;
+                } else {
+                    photo.url = compressedUrl;
+                    photo.originalUrl = compressedUrl;
+                }
+            }
+
             const reader = new FileReader();
             reader.onload = (evt) => {
                 const rawImgUrl = evt.target.result;
@@ -2361,26 +2708,26 @@
                         compressImage(rawImgUrl, preset.maxSide, preset.quality, (compressedUrl) => {
                             const photo = photoList.find(p => p.id === targetCardPhotoId);
                             if (photo) {
-                                photo.url = compressedUrl;
-                                photo.originalUrl = compressedUrl;
-                                photo.date = photoDate;
+                                assignSlotImage(photo, compressedUrl);
+                                if (!targetCardPhotoSlot) photo.date = photoDate;
                                 renderPhotoSheets();
                                 showToast("사진이 추가/변경되었습니다.");
                             }
                             targetCardPhotoId = null;
+                            targetCardPhotoSlot = null;
                         });
                     });
                 } catch (err) {
                     compressImage(rawImgUrl, preset.maxSide, preset.quality, (compressedUrl) => {
                         const photo = photoList.find(p => p.id === targetCardPhotoId);
                         if (photo) {
-                            photo.url = compressedUrl;
-                            photo.originalUrl = compressedUrl;
-                            photo.date = photoDate;
+                            assignSlotImage(photo, compressedUrl);
+                            if (!targetCardPhotoSlot) photo.date = photoDate;
                             renderPhotoSheets();
                             showToast("사진이 추가/변경되었습니다.");
                         }
                         targetCardPhotoId = null;
+                        targetCardPhotoSlot = null;
                     });
                 }
             };
@@ -2618,11 +2965,15 @@
                 value: isEmpty
                     ? `<td style="width: ${workTypeValueW}%;" class="p-0.5"></td>`
                     : `<td style="width: ${workTypeValueW}%;" class="p-0.5 relative group/cell">
-                            <input type="text" 
-                                   value="${escapeHtml(photo.workType)}" 
-                                   oninput="updatePhotoData('${photo.id}', 'workType', this.value)" 
-                                   class="w-full pl-1.5 pr-1 py-0.5 ${valueFontClass} outline-none" 
-                                   placeholder="공종 입력">
+                            <div class="flex items-center min-w-0">
+                                <input type="text" 
+                                       id="wt_${photo.id}"
+                                       value="${escapeHtml(photo.workType)}" 
+                                       oninput="updatePhotoData('${photo.id}', 'workType', this.value)" 
+                                       class="w-full min-w-0 flex-1 pl-1.5 pr-1 py-0.5 ${valueFontClass} outline-none" 
+                                       placeholder="공종 입력">
+                                <button onclick="openPhraseModalForCard('${photo.id}')" title="등록된 공정에서 선택" class="no-print text-slate-400 hover:text-teal-600 px-1 shrink-0"><i class="fa-solid fa-diagram-project text-xs"></i></button>
+                            </div>
                         </td>`
             };
 
@@ -3058,13 +3409,30 @@
             const searchInputEl = document.getElementById('photoSearchInput');
             const dateFromEl = document.getElementById('photoSearchDateFrom');
             const dateToEl = document.getElementById('photoSearchDateTo');
+            const workTypeFilterEl = document.getElementById('photoWorkTypeFilter');
             const keyword = (searchInputEl ? searchInputEl.value.trim().toLowerCase() : '');
             const dateFrom = (dateFromEl ? dateFromEl.value : '');
             const dateTo = (dateToEl ? dateToEl.value : '');
-            const filterActive = !!(keyword || dateFrom || dateTo);
+            const selectedWorkType = (workTypeFilterEl ? workTypeFilterEl.value : '');
+            const filterActive = !!(keyword || dateFrom || dateTo || selectedWorkType);
+
+            // 공종 드롭다운 옵션을 현재 등록된 사진들의 공종 기준으로 갱신 (선택값 유지)
+            if (workTypeFilterEl) {
+                const uniqueWorkTypes = [...new Set(photoList.map(p => (p.workType || '').trim()).filter(Boolean))];
+                uniqueWorkTypes.sort((a, b) => {
+                    const ai = getWorkTypePriority(a), bi = getWorkTypePriority(b);
+                    if (ai !== bi) return ai - bi;
+                    return a.localeCompare(b, 'ko');
+                });
+                const prevValue = workTypeFilterEl.value;
+                workTypeFilterEl.innerHTML = `<option value="">공종: 전체 표시</option>` +
+                    uniqueWorkTypes.map(wt => `<option value="${escapeHtml(wt)}">${escapeHtml(wt)}만 표시</option>`).join('');
+                if (uniqueWorkTypes.includes(prevValue)) workTypeFilterEl.value = prevValue;
+            }
 
             function photoMatchesFilter(photo) {
                 if (!filterActive) return true;
+                if (selectedWorkType && (photo.workType || '').trim() !== selectedWorkType) return false;
                 if (keyword) {
                     const haystack = [photo.workType, photo.location, photo.description, photo.badge, photo.extraValue]
                         .filter(Boolean).join(' ').toLowerCase();
@@ -3135,7 +3503,7 @@
                     const isMatch = photoMatchesFilter(photo);
 
                     pageHTML += `
-                        <div class="photo-card-block border-2 border-black p-1.5 bg-white flex flex-col justify-between flex-1 min-h-0 relative group overflow-hidden ${filterActive && !isMatch ? 'opacity-25 no-print' : ''} ${selectionMode && selectedPhotoIds.has(photo.id) ? 'ring-4 ring-blue-500' : ''}" data-id="${photo.id}" data-index="${globalIndex}">
+                        <div class="photo-card-block border-2 border-black p-1.5 bg-white flex flex-col justify-between flex-1 min-h-0 relative group overflow-hidden ${filterActive && !isMatch ? 'hidden no-print' : ''} ${selectionMode && selectedPhotoIds.has(photo.id) ? 'ring-4 ring-blue-500' : ''}" data-id="${photo.id}" data-index="${globalIndex}">
 
                             ${selectionMode ? `
                             <label class="no-print absolute top-2 left-2 z-30 w-7 h-7 flex items-center justify-center bg-white/95 rounded-lg shadow-lg cursor-pointer border-2 ${selectedPhotoIds.has(photo.id) ? 'border-blue-500' : 'border-slate-300'}">
@@ -3165,21 +3533,11 @@
                                 ` : ''}
                                 <button onclick="movePhoto(${globalIndex}, -1)" title="위로 이동" class="w-6 h-6 flex items-center justify-center hover:bg-slate-700 rounded-lg text-xs"><i class="fa-solid fa-arrow-up"></i></button>
                                 <button onclick="movePhoto(${globalIndex}, 1)" title="아래로 이동" class="w-6 h-6 flex items-center justify-center hover:bg-slate-700 rounded-lg text-xs"><i class="fa-solid fa-arrow-down"></i></button>
+                                ${siteMapUrl ? `<button onclick="openSiteMapPinModal('${photo.id}')" title="위치도에 촬영지점 표시" class="w-6 h-6 flex items-center justify-center hover:bg-emerald-700 rounded-lg text-xs ${photo.pinX !== undefined && photo.pinX !== null ? 'text-emerald-400' : ''}"><i class="fa-solid fa-location-dot"></i></button>` : ''}
                                 <button onclick="deletePhoto('${photo.id}')" title="${photo.url ? '사진 비우기 (빈 카드로 보존)' : '빈 카드 완전히 삭제'}" class="w-6 h-6 flex items-center justify-center hover:bg-rose-600 rounded-lg text-xs transition"><i class="fa-solid fa-xmark"></i></button>
                             </div>
 
-                            <div class="photo-img-container w-full flex-1 min-h-0 bg-slate-50 border border-black overflow-hidden flex items-center justify-center relative mb-1">
-                                ${photo.badge && photo.badge.trim() ? `<div class="photo-badge-tag absolute top-2 left-2 z-10 bg-red-600 text-white font-black text-xs px-2.5 py-1 rounded shadow-md border border-white max-w-[85%] break-words ${!showBadge ? 'no-print' : ''}">${escapeHtml(photo.badge.trim())}</div>` : ''}
-                                ${buildChalkboardHTML(photo)}
-                                ${photo.url ? `<img src="${photo.url}" style="transform: rotate(${photo.rotation}deg); object-fit: ${fitMode};" class="w-full h-full max-h-full transition-transform duration-200" alt="공사 현장 사진">` : `
-                                    <div onclick="triggerCardFileInput('${photo.id}')" class="w-full h-full flex flex-col items-center justify-center text-slate-400 cursor-pointer no-print hover:bg-amber-50/50 hover:text-amber-600 transition group/blank">
-                                        <i class="fa-solid fa-cloud-arrow-up text-2xl mb-1 group-hover/blank:scale-110 transition-transform"></i>
-                                        <span class="text-xs font-bold">클릭하여 사진 선택/등록</span>
-                                        <span class="text-[10px] text-slate-400 font-normal mt-0.5">또는 탐색기에서 사진 파일 드래그</span>
-                                    </div>
-                                    <div class="hidden print-only text-slate-300 text-xs font-semibold">사진 미등록</div>
-                                `}
-                            </div>
+                            ${buildPhotoImageAreaHTML(photo, fitMode)}
 
                             <table class="photo-card-table w-full text-xs text-black shrink-0 table-fixed">
                                 ${buildInfoColgroup()}
@@ -3203,7 +3561,10 @@
                     `;
                 });
 
-                const emptySlotsCount = photosPerPage - pagePhotos.length;
+                // 공종/검색 필터로 숨겨진(비매칭) 실제 사진이 있으면 그만큼 빈 카드로 채워서
+                // 필터 적용 중에도 페이지당 슬롯 수(예: 2장씩)가 그대로 유지되도록 한다.
+                const visibleRealCount = filterActive ? pagePhotos.filter(photoMatchesFilter).length : pagePhotos.length;
+                const emptySlotsCount = photosPerPage - visibleRealCount;
                 for (let e = 0; e < emptySlotsCount; e++) {
                     pageHTML += `
                         <div class="photo-card-block border-2 border-black p-1.5 bg-white flex flex-col justify-between flex-1 min-h-0 relative overflow-hidden opacity-75">
@@ -3257,6 +3618,13 @@
             const filterResultEl = document.getElementById('filterResultText');
             if (filterResultEl) {
                 filterResultEl.innerText = filterActive ? `검색결과 ${matchedCount}장 (인쇄시 검색결과만 출력됩니다)` : '';
+            }
+
+            const siteMapCheckbox = document.getElementById('showSiteMapToggle');
+            if (siteMapCheckbox) showSiteMap = siteMapCheckbox.checked;
+            if (showSiteMap && siteMapUrl) {
+                const mapDiv = buildSiteMapPage();
+                photoSheetsContainer.insertBefore(mapDiv, photoSheetsContainer.firstChild);
             }
 
             const tocCheckbox = document.getElementById('showTocToggle');
@@ -3508,6 +3876,168 @@
             renderPhotoSheets();
         }
 
+        function toggleCompletionMode(checked) {
+            completionMode = checked;
+            if (completionMode) {
+                // 준공모드 진입 시 목차/그룹형 TOC를 기본으로 켜준다 (요청 시 언제든 변경 가능)
+                showToc = true;
+                tocStyle = 'grouped';
+                const tocToggleEl = document.getElementById('showTocToggle');
+                const tocStyleEl = document.getElementById('tocStyleSelect');
+                if (tocToggleEl) tocToggleEl.checked = true;
+                if (tocStyleEl) tocStyleEl.value = 'grouped';
+                showToast("준공모드가 켜졌습니다. (3단 비교 카드, 그룹 목차 자동 적용)");
+            } else {
+                showToast("준공모드가 꺼졌습니다.");
+            }
+            scheduleAutoSave();
+            renderPhotoSheets();
+        }
+
+        function triggerSiteMapFileInput() {
+            const input = document.getElementById('siteMapFileInput');
+            if (input) { input.value = ''; input.click(); }
+        }
+
+        function handleSiteMapUpload(e) {
+            if (!e.target.files || e.target.files.length === 0) return;
+            const file = e.target.files[0];
+            if (!file.type.startsWith('image/')) return;
+
+            const reader = new FileReader();
+            reader.onload = (evt) => {
+                compressImage(evt.target.result, 2000, 0.88, (compressedUrl) => {
+                    siteMapUrl = compressedUrl;
+                    const labelEl = document.getElementById('siteMapUploadLabel');
+                    if (labelEl) labelEl.innerText = '위치도 이미지 변경';
+                    scheduleAutoSave();
+                    if (showSiteMap) renderPhotoSheets();
+                    showToast("위치도 이미지가 등록되었습니다.");
+                });
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function clearSiteMap() {
+            pendingConfirmCallback = () => {
+                siteMapUrl = null;
+                photoList.forEach(p => { p.pinX = undefined; p.pinY = undefined; });
+                const labelEl = document.getElementById('siteMapUploadLabel');
+                if (labelEl) labelEl.innerText = '위치도 이미지 업로드';
+                scheduleAutoSave();
+                renderPhotoSheets();
+                showToast("위치도가 삭제되었습니다.");
+            };
+            const modal = document.getElementById('customConfirmModal');
+            const titleEl = document.getElementById('confirmTitle');
+            const msgEl = document.getElementById('confirmMessage');
+            if (titleEl) titleEl.innerText = "위치도 삭제";
+            if (msgEl) msgEl.innerHTML = "위치도 이미지와 등록된 모든 촬영지점 핀이 삭제됩니다.<br>계속할까요?";
+            if (modal) modal.classList.remove('hidden');
+        }
+
+        function toggleSiteMapDisplay(checked) {
+            showSiteMap = checked;
+            if (checked && !siteMapUrl) {
+                showToast("먼저 위치도 이미지를 업로드해 주세요.");
+            }
+            renderPhotoSheets();
+            scheduleAutoSave();
+        }
+
+        function openSiteMapPinModal(photoId) {
+            if (!siteMapUrl) {
+                showToast("먼저 설정에서 위치도 이미지를 업로드해 주세요.");
+                return;
+            }
+            pinTargetPhotoId = photoId;
+            const modal = document.getElementById('siteMapPinModal');
+            const imgEl = document.getElementById('siteMapPinImage');
+            if (imgEl) imgEl.src = siteMapUrl;
+            renderSiteMapPinOverlay();
+            if (modal) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            }
+        }
+
+        function closeSiteMapPinModal() {
+            pinTargetPhotoId = null;
+            const modal = document.getElementById('siteMapPinModal');
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
+        }
+
+        function renderSiteMapPinOverlay() {
+            const overlay = document.getElementById('siteMapPinOverlay');
+            if (!overlay) return;
+            overlay.innerHTML = photoList.map((p, idx) => {
+                if (p.pinX === undefined || p.pinY === undefined || p.pinX === null || p.pinY === null) return '';
+                const isTarget = p.id === pinTargetPhotoId;
+                return `<div class="absolute -translate-x-1/2 -translate-y-1/2 w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black text-white shadow-lg border-2 border-white pointer-events-none ${isTarget ? 'bg-rose-600' : 'bg-slate-700'}" style="left:${p.pinX}%; top:${p.pinY}%;">${idx + 1}</div>`;
+            }).join('');
+        }
+
+        function handleSiteMapImageClick(event) {
+            if (!pinTargetPhotoId) return;
+            const img = event.currentTarget;
+            const rect = img.getBoundingClientRect();
+            const x = ((event.clientX - rect.left) / rect.width) * 100;
+            const y = ((event.clientY - rect.top) / rect.height) * 100;
+
+            const photo = photoList.find(p => p.id === pinTargetPhotoId);
+            if (!photo) return;
+
+            photo.pinX = Math.max(0, Math.min(100, x));
+            photo.pinY = Math.max(0, Math.min(100, y));
+
+            renderSiteMapPinOverlay();
+            scheduleAutoSave();
+            showToast("촬영지점이 지정되었습니다.");
+        }
+
+        function removePinForPhoto(photoId) {
+            const photo = photoList.find(p => p.id === photoId);
+            if (!photo) return;
+            photo.pinX = undefined;
+            photo.pinY = undefined;
+            renderSiteMapPinOverlay();
+            scheduleAutoSave();
+            showToast("촬영지점 핀이 제거되었습니다.");
+        }
+
+        function buildSiteMapPage() {
+            const mapDiv = document.createElement('div');
+            mapDiv.className = 'a4-preview-page a4-page flex flex-col border border-slate-200 overflow-hidden bg-white';
+
+            const pins = photoList.map((p, idx) => ({ p, idx }))
+                .filter(({ p }) => p.pinX !== undefined && p.pinY !== undefined && p.pinX !== null && p.pinY !== null);
+
+            const pinsHTML = pins.map(({ p, idx }) => `
+                <div class="absolute -translate-x-1/2 -translate-y-1/2 w-7 h-7 rounded-full flex items-center justify-center text-xs font-black text-white shadow-lg border-2 border-white bg-rose-600" style="left:${p.pinX}%; top:${p.pinY}%;">${idx + 1}</div>
+            `).join('');
+
+            mapDiv.innerHTML = `
+                <div class="w-full flex-1 flex flex-col overflow-hidden p-2">
+                    <div class="w-full flex items-center justify-between text-xs font-bold border-b-2 border-black pb-1 mb-1 shrink-0">
+                        <span class="text-base font-black tracking-tight text-black">현장명 : ${escapeHtml(siteName)}</span>
+                    </div>
+                    <div class="text-center my-1 shrink-0">
+                        <h2 class="text-xl font-black tracking-[0.3em] text-black">위 치 도</h2>
+                        <p class="text-[10px] font-semibold text-slate-500 mt-1">촬영지점 총 ${pins.length}개소</p>
+                    </div>
+                    <div class="flex-1 relative overflow-hidden border border-black">
+                        ${siteMapUrl ? `<img src="${siteMapUrl}" class="w-full h-full object-contain">` : `<div class="w-full h-full flex items-center justify-center text-slate-300 text-sm font-bold">위치도 미등록</div>`}
+                        ${pinsHTML}
+                    </div>
+                </div>
+                <div class="text-center text-xs font-bold text-slate-800 pt-1 border-t border-slate-300 shrink-0">- 위치도 -</div>
+            `;
+            return mapDiv;
+        }
+
         function toggleIndexNumberDisplay(checked) {
             showIndexNumber = checked;
             renderPhotoSheets();
@@ -3727,13 +4257,69 @@
             renderPhotoSheets();
         }
 
+        let originalPhotoOrderSnapshot = null;
+
+        function ensureOriginalOrderSnapshot() {
+            if (!originalPhotoOrderSnapshot) {
+                originalPhotoOrderSnapshot = photoList.map(p => p.id);
+            }
+        }
+
+        function getWorkTypePriority(workType) {
+            const idx = standardWorkTypes.indexOf((workType || '').trim());
+            return idx === -1 ? 999 : idx;
+        }
+
+        function sortPhotos(mode) {
+            if (!photoList.length) return;
+            saveCurrentInputValues();
+            pushUndoSnapshot();
+
+            const collator = new Intl.Collator('ko');
+
+            if (mode === 'default') {
+                if (originalPhotoOrderSnapshot) {
+                    const orderIndex = new Map(originalPhotoOrderSnapshot.map((id, i) => [id, i]));
+                    photoList.sort((a, b) => {
+                        const ai = orderIndex.has(a.id) ? orderIndex.get(a.id) : Infinity;
+                        const bi = orderIndex.has(b.id) ? orderIndex.get(b.id) : Infinity;
+                        return ai - bi;
+                    });
+                }
+            } else {
+                ensureOriginalOrderSnapshot();
+
+                if (mode === 'dateAsc') {
+                    photoList.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+                } else if (mode === 'dateDesc') {
+                    photoList.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+                } else if (mode === 'workType') {
+                    photoList.sort((a, b) => collator.compare(a.workType || '', b.workType || ''));
+                } else if (mode === 'workTypeOrder') {
+                    photoList.sort((a, b) => {
+                        const ai = getWorkTypePriority(a.workType);
+                        const bi = getWorkTypePriority(b.workType);
+                        if (ai !== bi) return ai - bi;
+                        return collator.compare(a.workType || '', b.workType || '');
+                    });
+                } else if (mode === 'location') {
+                    photoList.sort((a, b) => collator.compare(a.location || '', b.location || ''));
+                }
+            }
+
+            renderPhotoSheets();
+            showToast("사진 순서가 재정렬되었습니다.");
+        }
+
         function clearPhotoFilter() {
             const searchInput = document.getElementById('photoSearchInput');
             const dateFrom = document.getElementById('photoSearchDateFrom');
             const dateTo = document.getElementById('photoSearchDateTo');
+            const workTypeFilter = document.getElementById('photoWorkTypeFilter');
             if (searchInput) searchInput.value = '';
             if (dateFrom) dateFrom.value = '';
             if (dateTo) dateTo.value = '';
+            if (workTypeFilter) workTypeFilter.value = '';
             renderPhotoSheets();
         }
 

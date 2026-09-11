@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>토목 현장 사진대지 작성 프로그램 V2.2</title>
+    <title>토목 현장 사진대지 작성 프로그램 V2.3</title>
 
     <!-- ===== PWA: Web App Manifest & Favicons ===== -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='512' height='512' viewBox='0 0 512 512'><rect width='512' height='512' rx='100' fill='%230f172a'/><circle cx='256' cy='256' r='220' fill='%231e293b'/><path d='M256 110 C160 110 110 180 110 250 L402 250 C402 180 352 110 256 110 Z' fill='%23f59e0b'/><rect x='80' y='240' width='352' height='32' rx='10' fill='%23d97706'/><rect x='236' y='110' width='40' height='140' fill='%23fbbf24'/><path d='M160 300 H352 V410 H160 Z' fill='%23ffffff' opacity='0.9'/><path d='M180 320 L240 370 L290 335 L332 375 H180 Z' fill='%230f172a'/><circle cx='310' cy='330' r='14' fill='%23f59e0b'/></svg>">
@@ -512,7 +512,7 @@
                     <h1 class="font-black text-lg leading-tight flex items-center gap-2 text-slate-100 tracking-tight truncate">
                         토목 현장 사진대지 작성기
                         <span class="hidden md:inline text-[10px] bg-amber-500/20 text-amber-400 border border-amber-500/40 px-2 py-0.5 rounded-full font-bold tracking-wider uppercase shrink-0">Pro Ultimate</span>
-                        <span class="hidden md:inline text-[10px] bg-slate-700/60 text-slate-300 border border-slate-600/60 px-2 py-0.5 rounded-full font-bold tracking-wider shrink-0">V2.2</span>
+                        <span class="hidden md:inline text-[10px] bg-slate-700/60 text-slate-300 border border-slate-600/60 px-2 py-0.5 rounded-full font-bold tracking-wider shrink-0">V2.3</span>
                     </h1>
                     <p class="hidden sm:block text-[11px] text-slate-400 font-medium truncate">Civil Engineering Site Photo Sheet Generator</p>
                 </div>
@@ -655,6 +655,9 @@
 
                 <button id="duplicateFilterBtn" onclick="toggleDuplicateFilter()" title="같은 사진이 중복 등록되었는지 검사합니다" class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 border border-transparent text-slate-600 rounded-lg text-xs font-bold transition shrink-0 flex items-center gap-1">
                     <i class="fa-solid fa-clone"></i> 중복 검사
+                </button>
+                <button id="incompleteFilterBtn" onclick="toggleIncompleteFilter()" title="공종/위치/내용 중 빠진 정보가 있는 사진만 찾습니다" class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 border border-transparent text-slate-600 rounded-lg text-xs font-bold transition shrink-0 flex items-center gap-1">
+                    <i class="fa-solid fa-triangle-exclamation"></i> 미분류 찾기
                 </button>
                 <span id="photoCountText" class="text-xs font-bold text-amber-600 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-lg shrink-0">총 0장 / 0페이지</span>
                 <span id="filterResultText" class="text-[11px] font-bold text-slate-400 shrink-0"></span>
@@ -1798,6 +1801,9 @@
 
         // 중복 사진 검사
         let duplicateFilterActive = false;
+
+        // 미분류(정보 누락) 사진 찾기
+        let incompleteFilterActive = false;
 
         // Standard Work Type (공종) Library
         let standardWorkTypes = [
@@ -3422,8 +3428,9 @@
             const dateFrom = (dateFromEl ? dateFromEl.value : '');
             const dateTo = (dateToEl ? dateToEl.value : '');
             const selectedWorkType = (workTypeFilterEl ? workTypeFilterEl.value : '');
-            const filterActive = !!(keyword || dateFrom || dateTo || selectedWorkType || duplicateFilterActive);
+            const filterActive = !!(keyword || dateFrom || dateTo || selectedWorkType || duplicateFilterActive || incompleteFilterActive);
             const duplicateIds = detectDuplicatePhotoIds();
+            const incompleteIds = detectIncompletePhotoIds();
 
             // 공종 드롭다운 옵션을 현재 등록된 사진들의 공종 기준으로 갱신 (선택값 유지)
             if (workTypeFilterEl) {
@@ -3442,6 +3449,7 @@
             function photoMatchesFilter(photo) {
                 if (!filterActive) return true;
                 if (duplicateFilterActive && !duplicateIds.has(photo.id)) return false;
+                if (incompleteFilterActive && !incompleteIds.has(photo.id)) return false;
                 if (selectedWorkType && (photo.workType || '').trim() !== selectedWorkType) return false;
                 if (keyword) {
                     const haystack = [photo.workType, photo.location, photo.description, photo.badge, photo.extraValue]
@@ -3513,11 +3521,17 @@
                     const isMatch = photoMatchesFilter(photo);
 
                     pageHTML += `
-                        <div class="photo-card-block border-2 border-black p-1.5 bg-white flex flex-col justify-between flex-1 min-h-0 relative group overflow-hidden ${filterActive && !isMatch ? 'hidden no-print' : ''} ${selectionMode && selectedPhotoIds.has(photo.id) ? 'ring-4 ring-blue-500' : ''} ${duplicateIds.has(photo.id) ? 'ring-2 ring-rose-500' : ''}" data-id="${photo.id}" data-index="${globalIndex}">
+                        <div class="photo-card-block border-2 border-black p-1.5 bg-white flex flex-col justify-between flex-1 min-h-0 relative group overflow-hidden ${filterActive && !isMatch ? 'hidden no-print' : ''} ${selectionMode && selectedPhotoIds.has(photo.id) ? 'ring-4 ring-blue-500' : ''} ${duplicateIds.has(photo.id) ? 'ring-2 ring-rose-500' : (incompleteIds.has(photo.id) ? 'ring-2 ring-amber-400' : '')}" data-id="${photo.id}" data-index="${globalIndex}">
 
                             ${duplicateIds.has(photo.id) ? `
                             <div class="no-print absolute bottom-2 left-2 z-20 bg-rose-600 text-white text-[10px] font-black px-2 py-1 rounded-lg shadow-lg flex items-center gap-1" title="동일한 사진이 다른 카드에도 등록되어 있습니다">
                                 <i class="fa-solid fa-triangle-exclamation"></i> 중복
+                            </div>
+                            ` : ''}
+
+                            ${incompleteIds.has(photo.id) ? `
+                            <div class="no-print absolute bottom-2 right-2 z-20 bg-amber-500 text-white text-[10px] font-black px-2 py-1 rounded-lg shadow-lg flex items-center gap-1" title="사진 또는 공종/날짜/위치/내용 중 빠진 정보가 있습니다">
+                                <i class="fa-solid fa-circle-question"></i> 미분류
                             </div>
                             ` : ''}
 
@@ -3697,6 +3711,7 @@
             const clone = container.cloneNode(true);
             clone.querySelectorAll('.no-print').forEach(el => el.remove());
             clone.querySelectorAll('.ring-rose-500').forEach(el => el.classList.remove('ring-2', 'ring-rose-500'));
+            clone.querySelectorAll('.ring-amber-400').forEach(el => el.classList.remove('ring-2', 'ring-amber-400'));
 
             // 넓은 화면에서는 사진대지가 2열로 나란히 배치되는데, 이 화면용 레이아웃을
             // 그대로 캡처하면 A4 폭(210mm)을 넘는 콘텐츠가 잘려서 PDF 오른쪽이 잘린다.
@@ -4339,6 +4354,8 @@
             if (workTypeFilter) workTypeFilter.value = '';
             duplicateFilterActive = false;
             setDuplicateFilterButtonStyle();
+            incompleteFilterActive = false;
+            setIncompleteFilterButtonStyle();
             renderPhotoSheets();
         }
 
@@ -4381,6 +4398,46 @@
                 duplicateFilterActive = false;
             }
             setDuplicateFilterButtonStyle();
+            renderPhotoSheets();
+        }
+
+        function detectIncompletePhotoIds() {
+            const ids = new Set();
+            photoList.forEach(photo => {
+                if (!photo.url) { ids.add(photo.id); return; }
+                if (showFieldWorkType && !(photo.workType || '').trim()) { ids.add(photo.id); return; }
+                if (showFieldDate && !photo.date) { ids.add(photo.id); return; }
+                if (showFieldLocation && !(photo.location || '').trim()) { ids.add(photo.id); return; }
+                if (showFieldDescription && !(photo.description || '').trim()) { ids.add(photo.id); return; }
+            });
+            return ids;
+        }
+
+        function setIncompleteFilterButtonStyle() {
+            const btn = document.getElementById('incompleteFilterBtn');
+            if (!btn) return;
+            if (incompleteFilterActive) {
+                btn.classList.add('bg-amber-100', 'border-amber-300', 'text-amber-700');
+                btn.classList.remove('bg-slate-100', 'text-slate-600');
+            } else {
+                btn.classList.remove('bg-amber-100', 'border-amber-300', 'text-amber-700');
+                btn.classList.add('bg-slate-100', 'text-slate-600');
+            }
+        }
+
+        function toggleIncompleteFilter() {
+            if (!incompleteFilterActive) {
+                const ids = detectIncompletePhotoIds();
+                if (ids.size === 0) {
+                    showToast("빠진 정보가 있는 사진이 없습니다. 👍");
+                    return;
+                }
+                incompleteFilterActive = true;
+                showToast(`정보가 빠진 사진 ${ids.size}장을 발견했습니다.`);
+            } else {
+                incompleteFilterActive = false;
+            }
+            setIncompleteFilterButtonStyle();
             renderPhotoSheets();
         }
 
@@ -5004,6 +5061,7 @@
             const clone = container.cloneNode(true);
             clone.querySelectorAll('.no-print').forEach(el => el.remove());
             clone.querySelectorAll('.ring-rose-500').forEach(el => el.classList.remove('ring-2', 'ring-rose-500'));
+            clone.querySelectorAll('.ring-amber-400').forEach(el => el.classList.remove('ring-2', 'ring-amber-400'));
 
             clone.querySelectorAll('input, textarea').forEach(input => {
                 if (input.tagName.toLowerCase() === 'textarea') {

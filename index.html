@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>토목 현장 사진대지 작성 프로그램 V3.2</title>
+    <title>토목 현장 사진대지 작성 프로그램 V3.5</title>
 
     <!-- ===== PWA: Web App Manifest & Favicons ===== -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='512' height='512' viewBox='0 0 512 512'><rect width='512' height='512' rx='100' fill='%230f172a'/><circle cx='256' cy='256' r='220' fill='%231e293b'/><path d='M256 110 C160 110 110 180 110 250 L402 250 C402 180 352 110 256 110 Z' fill='%23f59e0b'/><rect x='80' y='240' width='352' height='32' rx='10' fill='%23d97706'/><rect x='236' y='110' width='40' height='140' fill='%23fbbf24'/><path d='M160 300 H352 V410 H160 Z' fill='%23ffffff' opacity='0.9'/><path d='M180 320 L240 370 L290 335 L332 375 H180 Z' fill='%230f172a'/><circle cx='310' cy='330' r='14' fill='%23f59e0b'/></svg>">
@@ -527,7 +527,7 @@
                     <h1 class="font-black text-lg leading-tight flex items-center gap-2 text-slate-100 tracking-tight truncate">
                         토목 현장 사진대지 작성기
                         <span class="hidden md:inline text-[10px] bg-amber-500/20 text-amber-400 border border-amber-500/40 px-2 py-0.5 rounded-full font-bold tracking-wider uppercase shrink-0">Pro Ultimate</span>
-                        <span class="hidden md:inline text-[10px] bg-slate-700/60 text-slate-300 border border-slate-600/60 px-2 py-0.5 rounded-full font-bold tracking-wider shrink-0">V3.2</span>
+                        <span class="hidden md:inline text-[10px] bg-slate-700/60 text-slate-300 border border-slate-600/60 px-2 py-0.5 rounded-full font-bold tracking-wider shrink-0">V3.5</span>
                     </h1>
                     <p class="hidden sm:block text-[11px] text-slate-400 font-medium truncate">Civil Engineering Site Photo Sheet Generator</p>
                 </div>
@@ -570,6 +570,20 @@
                 <button onclick="toggleSelectionMode()" id="selectionModeBtn" title="여러 사진 선택하여 일괄 작업" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl border border-slate-700 text-xs font-semibold transition flex items-center gap-1.5">
                     <i class="fa-solid fa-square-check"></i> <span class="hidden sm:inline">선택</span>
                 </button>
+
+                <div class="relative">
+                    <button onclick="toggleRecentProjectsMenu()" id="recentProjectsBtn" title="최근 작업한 현장으로 빠르게 전환" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl border border-slate-700 text-xs font-semibold transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-clock-rotate-left"></i> <span class="hidden sm:inline">최근 현장</span>
+                    </button>
+                    <div id="recentProjectsPanel" class="hidden absolute left-0 top-full mt-2 w-64 bg-white text-slate-800 rounded-xl shadow-2xl border border-slate-200 py-1.5 z-50">
+                        <div class="px-3 pt-1.5 pb-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">최근 작업한 현장</div>
+                        <div id="recentProjectsList"></div>
+                        <div class="my-1 border-t border-slate-100"></div>
+                        <button onclick="toggleProjectStorePanel(); closeRecentProjectsMenu();" class="w-full text-left px-3 py-2 text-xs font-semibold hover:bg-slate-50 flex items-center gap-2 transition text-purple-600">
+                            <i class="fa-solid fa-box-archive w-4"></i> 저장함 전체 보기
+                        </button>
+                    </div>
+                </div>
 
                 <div class="w-px h-6 bg-slate-700/80 hidden sm:block"></div>
 
@@ -716,25 +730,25 @@
         </div>
 
         <!-- Center Printable Photo Sheets Container -->
-        <div class="w-full flex flex-col items-center pb-6">
+        <div class="w-full flex flex-col items-center pb-24">
             <div id="photoSheetsContainer" class="photo-sheets-grid w-full">
                 <!-- Dynamic Pages Render Here -->
             </div>
-
-            <!-- Bottom Page Quick Action Bar -->
-            <div class="no-print mt-6 mb-2 flex items-center justify-center gap-3 flex-wrap">
-                <button onclick="triggerFileInput()" class="px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs rounded-xl shadow-md transition flex items-center gap-2">
-                    <i class="fa-solid fa-file-image text-sm"></i> 사진 파일 추가
-                </button>
-                <button onclick="addBlankPage()" class="px-4 py-2.5 bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs rounded-xl shadow-md transition flex items-center gap-2">
-                    <i class="fa-solid fa-file-circle-plus text-sm"></i> 빈 페이지 추가 (N개 배치)
-                </button>
-                <button onclick="deleteBlankPhotos()" class="px-4 py-2.5 bg-slate-700 hover:bg-slate-800 text-slate-100 font-bold text-xs rounded-xl shadow-md transition flex items-center gap-2" title="등록된 사진이 없는 모든 빈 카드 삭제">
-                    <i class="fa-solid fa-eraser text-sm"></i> 빈 카드 일괄 삭제
-                </button>
-            </div>
         </div>
     </main>
+
+    <!-- Floating Bottom Quick Action Bar (always visible, no scrolling needed) -->
+    <div class="no-print fixed bottom-4 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 bg-slate-900/95 backdrop-blur-sm px-3 py-2 rounded-2xl shadow-2xl border border-slate-700/60 flex-wrap justify-center max-w-[95vw]">
+        <button onclick="triggerFileInput()" class="px-3.5 py-2 bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs rounded-xl shadow-md transition flex items-center gap-1.5 whitespace-nowrap">
+            <i class="fa-solid fa-file-image text-sm"></i> <span class="hidden sm:inline">사진 파일 추가</span>
+        </button>
+        <button onclick="addBlankPage()" class="px-3.5 py-2 bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs rounded-xl shadow-md transition flex items-center gap-1.5 whitespace-nowrap">
+            <i class="fa-solid fa-file-circle-plus text-sm"></i> <span class="hidden sm:inline">빈 페이지 추가</span>
+        </button>
+        <button onclick="deleteBlankPhotos()" title="등록된 사진이 없는 모든 빈 카드 삭제" class="px-3.5 py-2 bg-slate-700 hover:bg-slate-600 text-slate-100 font-bold text-xs rounded-xl shadow-md transition flex items-center gap-1.5 whitespace-nowrap">
+            <i class="fa-solid fa-eraser text-sm"></i> <span class="hidden sm:inline">빈 카드 삭제</span>
+        </button>
+    </div>
 
     <!-- Settings Popup Modal (설정 팝업 모달) -->
     <div id="settingsModal" class="fixed inset-0 bg-slate-950/75 z-50 flex items-center justify-center hidden backdrop-blur-md no-print p-2 sm:p-4">
@@ -1475,6 +1489,28 @@
             <div class="flex justify-end gap-2">
                 <button onclick="skipBatchWorkType()" class="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs rounded-xl transition">건너뛰기</button>
                 <button onclick="applyBatchWorkType()" class="px-4 py-1.5 bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs rounded-xl shadow transition">적용</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Blank Pages Count Modal -->
+    <div id="blankPageCountModal" class="fixed inset-0 bg-slate-950/70 z-50 flex items-center justify-center hidden backdrop-blur-sm no-print p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-xs w-full p-5">
+            <h3 class="font-extrabold text-sm text-slate-800 mb-1 flex items-center gap-2">
+                <span class="w-6 h-6 rounded-lg bg-teal-100 text-teal-600 flex items-center justify-center text-xs">
+                    <i class="fa-solid fa-file-circle-plus"></i>
+                </span>
+                빈 페이지 추가
+            </h3>
+            <p class="text-[11px] text-slate-500 mb-3">몇 페이지를 추가할까요? (한 페이지당 <span id="blankPagePerPageText">2</span>장씩 배치됩니다)</p>
+            <div class="flex items-center gap-2 mb-3">
+                <button onclick="stepBlankPageCount(-1)" class="w-9 h-9 flex items-center justify-center bg-slate-100 hover:bg-slate-200 rounded-xl text-slate-600 font-bold text-base transition">-</button>
+                <input type="number" id="blankPageCountInput" value="1" min="1" max="50" onkeydown="if(event.key==='Enter'){confirmAddBlankPages();}" class="flex-1 text-center px-3 py-2 border border-slate-300 rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-teal-500/50">
+                <button onclick="stepBlankPageCount(1)" class="w-9 h-9 flex items-center justify-center bg-slate-100 hover:bg-slate-200 rounded-xl text-slate-600 font-bold text-base transition">+</button>
+            </div>
+            <div class="flex justify-end gap-2">
+                <button onclick="closeBlankPageCountModal()" class="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs rounded-xl transition">취소</button>
+                <button onclick="confirmAddBlankPages()" class="px-4 py-1.5 bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs rounded-xl shadow transition">추가</button>
             </div>
         </div>
     </div>
@@ -2313,6 +2349,7 @@
                 await dbPut(STORE_PROJECTS, { name: projectName, data: data, savedAt: Date.now() });
                 showToast(`"${projectName}" 저장함에 저장되었습니다.`);
                 renderProjectStoreList();
+                renderRecentProjectsDropdown();
             } catch (err) {
                 showToast("저장함 저장 중 오류가 발생했습니다.");
             }
@@ -2356,7 +2393,10 @@
                 const record = await dbGet(STORE_PROJECTS, name);
                 if (!record) { showToast("해당 현장을 찾을 수 없습니다."); return; }
                 applyLoadedData(record.data);
+                record.savedAt = Date.now(); // 최근 사용 순서 갱신
+                await dbPut(STORE_PROJECTS, record);
                 showToast(`"${name}" 현장을 불러왔습니다.`);
+                renderRecentProjectsDropdown();
             } catch (err) {
                 showToast("불러오기 중 오류가 발생했습니다.");
             }
@@ -2368,6 +2408,7 @@
                 await dbDelete(STORE_PROJECTS, name);
                 showToast(`"${name}" 항목이 삭제되었습니다.`);
                 renderProjectStoreList();
+                renderRecentProjectsDropdown();
             } catch (err) {
                 showToast("삭제 중 오류가 발생했습니다.");
             }
@@ -2641,7 +2682,7 @@
         }
 
         function isAnyModalOpen() {
-            const modalIds = ['settingsModal', 'phraseModal', 'siteMapPinModal', 'batchWorkTypeModal', 'customConfirmModal', 'projectStorePanel', 'missingFieldModal', 'pwaGuideModal', 'annotationModal'];
+            const modalIds = ['settingsModal', 'phraseModal', 'siteMapPinModal', 'batchWorkTypeModal', 'blankPageCountModal', 'customConfirmModal', 'projectStorePanel', 'missingFieldModal', 'pwaGuideModal', 'annotationModal'];
             return modalIds.some(id => {
                 const el = document.getElementById(id);
                 return el && !el.classList.contains('hidden');
@@ -2794,6 +2835,7 @@
         function toggleMoreMenu() {
             const panel = document.getElementById('moreMenuPanel');
             if (!panel) return;
+            closeRecentProjectsMenu();
             panel.classList.toggle('hidden');
         }
 
@@ -2802,12 +2844,68 @@
             if (panel) panel.classList.add('hidden');
         }
 
+        function toggleRecentProjectsMenu() {
+            const panel = document.getElementById('recentProjectsPanel');
+            if (!panel) return;
+            const isHidden = panel.classList.contains('hidden');
+            closeMoreMenu();
+            if (isHidden) {
+                panel.classList.remove('hidden');
+                renderRecentProjectsDropdown();
+            } else {
+                panel.classList.add('hidden');
+            }
+        }
+
+        function closeRecentProjectsMenu() {
+            const panel = document.getElementById('recentProjectsPanel');
+            if (panel) panel.classList.add('hidden');
+        }
+
+        async function renderRecentProjectsDropdown() {
+            const listEl = document.getElementById('recentProjectsList');
+            if (!listEl) return;
+            let projects = [];
+            try {
+                projects = await dbGetAll(STORE_PROJECTS);
+            } catch (err) { /* ignore */ }
+
+            if (projects.length === 0) {
+                listEl.innerHTML = `<div class="px-3 py-2 text-[11px] text-slate-400">저장된 현장이 없습니다.<br>"더보기 → 저장함에 저장"으로 현재 현장을 저장해 보세요.</div>`;
+                return;
+            }
+
+            projects.sort((a, b) => b.savedAt - a.savedAt);
+            const recent = projects.slice(0, 5);
+            listEl.innerHTML = recent.map(p => {
+                const dt = new Date(p.savedAt);
+                const dtStr = `${dt.getMonth() + 1}/${dt.getDate()} ${String(dt.getHours()).padStart(2, '0')}:${String(dt.getMinutes()).padStart(2, '0')}`;
+                const photoCount = (p.data.photoList || []).length;
+                const isCurrent = p.name === siteName;
+                return `
+                    <button onclick="loadFromProjectStore('${escapeHtml(p.name).replace(/'/g, "\\'")}'); closeRecentProjectsMenu();"
+                        class="w-full text-left px-3 py-2 text-xs hover:bg-slate-50 flex items-center gap-2 transition ${isCurrent ? 'bg-amber-50' : ''}">
+                        <i class="fa-solid ${isCurrent ? 'fa-folder-open text-amber-500' : 'fa-folder text-slate-400'} w-4 shrink-0"></i>
+                        <div class="flex-1 min-w-0">
+                            <div class="font-bold truncate ${isCurrent ? 'text-amber-700' : 'text-slate-800'}">${escapeHtml(p.name)}${isCurrent ? ' (현재)' : ''}</div>
+                            <div class="text-[10px] text-slate-400">${dtStr} · 사진 ${photoCount}장</div>
+                        </div>
+                    </button>
+                `;
+            }).join('');
+        }
+
         document.addEventListener('click', (e) => {
             const panel = document.getElementById('moreMenuPanel');
             const btn = document.getElementById('moreMenuBtn');
-            if (!panel || panel.classList.contains('hidden')) return;
-            if (!panel.contains(e.target) && !btn.contains(e.target)) {
+            if (panel && !panel.classList.contains('hidden') && !panel.contains(e.target) && !btn.contains(e.target)) {
                 panel.classList.add('hidden');
+            }
+
+            const recentPanel = document.getElementById('recentProjectsPanel');
+            const recentBtn = document.getElementById('recentProjectsBtn');
+            if (recentPanel && !recentPanel.classList.contains('hidden') && !recentPanel.contains(e.target) && !recentBtn.contains(e.target)) {
+                recentPanel.classList.add('hidden');
             }
         });
 
@@ -3273,12 +3371,55 @@
             showToast(`${count}개의 빈 사진카드가 추가되었습니다.`);
         }
 
-        function addBlankPage() {
+        function openBlankPageCountModal() {
             const selectEl = document.getElementById('photosPerPage');
-            const selectVal = selectEl ? selectEl.value : '2';
-            const photosPerPage = parseInt(selectVal) || 2;
-            addBlankPhotoItem(photosPerPage);
-            showToast("새 빈 페이지가 추가되었습니다.");
+            const photosPerPage = parseInt(selectEl ? selectEl.value : '2') || 2;
+            const perPageText = document.getElementById('blankPagePerPageText');
+            if (perPageText) perPageText.innerText = photosPerPage;
+
+            const input = document.getElementById('blankPageCountInput');
+            if (input) input.value = 1;
+
+            const modal = document.getElementById('blankPageCountModal');
+            if (modal) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            }
+            if (input) { input.focus(); input.select(); }
+        }
+
+        function closeBlankPageCountModal() {
+            const modal = document.getElementById('blankPageCountModal');
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
+        }
+
+        function stepBlankPageCount(delta) {
+            const input = document.getElementById('blankPageCountInput');
+            if (!input) return;
+            const current = parseInt(input.value) || 1;
+            const next = Math.min(50, Math.max(1, current + delta));
+            input.value = next;
+        }
+
+        function confirmAddBlankPages() {
+            const input = document.getElementById('blankPageCountInput');
+            let pages = input ? parseInt(input.value) : 1;
+            if (!pages || pages < 1) pages = 1;
+            if (pages > 50) pages = 50;
+
+            const selectEl = document.getElementById('photosPerPage');
+            const photosPerPage = parseInt(selectEl ? selectEl.value : '2') || 2;
+
+            closeBlankPageCountModal();
+            addBlankPhotoItem(pages * photosPerPage);
+            showToast(`빈 페이지 ${pages}장이 추가되었습니다.`);
+        }
+
+        function addBlankPage() {
+            openBlankPageCountModal();
         }
 
         function saveCurrentInputValues() {

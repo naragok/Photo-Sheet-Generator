@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>토목 현장 사진대지 작성 프로그램 V3.0</title>
+    <title>토목 현장 사진대지 작성 프로그램 V3.2</title>
 
     <!-- ===== PWA: Web App Manifest & Favicons ===== -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='512' height='512' viewBox='0 0 512 512'><rect width='512' height='512' rx='100' fill='%230f172a'/><circle cx='256' cy='256' r='220' fill='%231e293b'/><path d='M256 110 C160 110 110 180 110 250 L402 250 C402 180 352 110 256 110 Z' fill='%23f59e0b'/><rect x='80' y='240' width='352' height='32' rx='10' fill='%23d97706'/><rect x='236' y='110' width='40' height='140' fill='%23fbbf24'/><path d='M160 300 H352 V410 H160 Z' fill='%23ffffff' opacity='0.9'/><path d='M180 320 L240 370 L290 335 L332 375 H180 Z' fill='%230f172a'/><circle cx='310' cy='330' r='14' fill='%23f59e0b'/></svg>">
@@ -277,6 +277,12 @@
             contain: layout style;
         }
 
+        .photo-drop-zone.drop-zone-active {
+            outline: 3px dashed #f59e0b;
+            outline-offset: -3px;
+            background-color: rgba(245, 158, 11, 0.12);
+        }
+
         .photo-img-container {
             flex: 1 1 0%;
             min-height: 0;
@@ -521,7 +527,7 @@
                     <h1 class="font-black text-lg leading-tight flex items-center gap-2 text-slate-100 tracking-tight truncate">
                         토목 현장 사진대지 작성기
                         <span class="hidden md:inline text-[10px] bg-amber-500/20 text-amber-400 border border-amber-500/40 px-2 py-0.5 rounded-full font-bold tracking-wider uppercase shrink-0">Pro Ultimate</span>
-                        <span class="hidden md:inline text-[10px] bg-slate-700/60 text-slate-300 border border-slate-600/60 px-2 py-0.5 rounded-full font-bold tracking-wider shrink-0">V3.0</span>
+                        <span class="hidden md:inline text-[10px] bg-slate-700/60 text-slate-300 border border-slate-600/60 px-2 py-0.5 rounded-full font-bold tracking-wider shrink-0">V3.2</span>
                     </h1>
                     <p class="hidden sm:block text-[11px] text-slate-400 font-medium truncate">Civil Engineering Site Photo Sheet Generator</p>
                 </div>
@@ -2653,29 +2659,65 @@
         }
 
         let dragHideTimer = null;
+        let currentHighlightedDropZone = null;
+
+        function findPhotoDropZone(target) {
+            return (target && typeof target.closest === 'function') ? target.closest('[data-photo-drop-zone]') : null;
+        }
+
+        function clearDropZoneHighlight() {
+            if (currentHighlightedDropZone) {
+                currentHighlightedDropZone.classList.remove('drop-zone-active');
+                currentHighlightedDropZone = null;
+            }
+        }
 
         function handleGlobalDragOver(e) {
-            // 파일(OS 탐색기)을 드래그할 때만 반응 - 카드 재정렬을 위한 내부 드래그(SortableJS)와 구분
-            if (!e.dataTransfer || !e.dataTransfer.types || !Array.from(e.dataTransfer.types).includes('Files')) return;
+            // preventDefault는 항상 실행해야 drop 이벤트가 발생한다.
+            // (브라우저/OS에 따라 dragover 단계에서 dataTransfer.types에 'Files'가
+            //  아직 노출되지 않는 경우가 있어, 조건부로 preventDefault를 생략하면
+            //  일부 브라우저(Edge 등)에서 파일을 놓아도 등록되지 않는 문제가 발생한다.)
             e.preventDefault();
             if (dragHideTimer) { clearTimeout(dragHideTimer); dragHideTimer = null; }
             if (isAnyModalOpen()) return;
-            showDragOverlay();
+
+            const zone = findPhotoDropZone(e.target);
+            if (zone !== currentHighlightedDropZone) {
+                clearDropZoneHighlight();
+                if (zone) zone.classList.add('drop-zone-active');
+                currentHighlightedDropZone = zone;
+            }
+
+            // 특정 사진 슬롯 위에 있을 땐 슬롯 자체가 강조되므로 전체 화면 오버레이는 띄우지 않는다.
+            if (zone) {
+                hideDragOverlay();
+                return;
+            }
+
+            // 오버레이 표시 여부는 참고용으로만 파일 드래그 여부를 확인한다 (실패해도 기능엔 영향 없음)
+            const types = (e.dataTransfer && e.dataTransfer.types) ? Array.from(e.dataTransfer.types) : [];
+            if (types.length === 0 || types.includes('Files')) {
+                showDragOverlay();
+            }
         }
 
         function scheduleHideDragOverlay() {
             if (dragHideTimer) clearTimeout(dragHideTimer);
             dragHideTimer = setTimeout(() => {
                 hideDragOverlay();
+                clearDropZoneHighlight();
                 dragHideTimer = null;
             }, 120);
         }
 
         function handleGlobalDrop(e) {
-            if (!e.dataTransfer || !e.dataTransfer.files || e.dataTransfer.files.length === 0) return;
             e.preventDefault();
             if (dragHideTimer) { clearTimeout(dragHideTimer); dragHideTimer = null; }
             hideDragOverlay();
+            const zone = findPhotoDropZone(e.target);
+            clearDropZoneHighlight();
+
+            if (!e.dataTransfer || !e.dataTransfer.files || e.dataTransfer.files.length === 0) return;
 
             if (isAnyModalOpen()) {
                 showToast("창을 닫은 뒤 사진을 추가해 주세요.");
@@ -2684,6 +2726,18 @@
 
             const activeTag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
             if (activeTag === 'input' || activeTag === 'textarea') return;
+
+            // 특정 사진 카드의 이미지 슬롯 위에 바로 놓은 경우, 그 슬롯에 등록한다.
+            if (zone) {
+                const photoId = zone.dataset.photoId;
+                const slot = zone.dataset.slot || null;
+                const file = e.dataTransfer.files[0];
+                processImageFileForSlot(file, photoId, slot);
+                if (e.dataTransfer.files.length > 1) {
+                    showToast(`이 칸에는 1장만 등록됩니다. 나머지 ${e.dataTransfer.files.length - 1}장은 등록되지 않았습니다.`);
+                }
+                return;
+            }
 
             processFiles(e.dataTransfer.files);
         }
@@ -2788,7 +2842,7 @@
 
         function buildPhotoImagePanelHTML(photo, slot, url, label) {
             return `
-                <div class="flex-1 h-full min-w-0 relative border-r border-black last:border-r-0 overflow-hidden flex items-center justify-center bg-slate-50">
+                <div class="flex-1 h-full min-w-0 relative border-r border-black last:border-r-0 overflow-hidden flex items-center justify-center bg-slate-50 photo-drop-zone" data-photo-drop-zone="1" data-photo-id="${photo.id}" data-slot="${slot || ''}">
                     <div class="absolute top-1 left-1 z-10 bg-slate-900/80 text-white text-[9px] font-black px-1.5 py-0.5 rounded no-print-label">${label}</div>
                     ${url ? `<img src="${url}" style="object-fit: cover;" class="w-full h-full" alt="${label}">` : `
                         <div onclick="triggerCardFileInput('${photo.id}', '${slot || ''}')" class="w-full h-full flex flex-col items-center justify-center text-slate-400 cursor-pointer no-print hover:bg-amber-50/50 hover:text-amber-600 transition">
@@ -2814,7 +2868,7 @@
             }
 
             return `
-                <div class="photo-img-container w-full flex-1 min-h-0 bg-slate-50 border border-black overflow-hidden flex items-center justify-center relative mb-1">
+                <div class="photo-img-container w-full flex-1 min-h-0 bg-slate-50 border border-black overflow-hidden flex items-center justify-center relative mb-1 photo-drop-zone" data-photo-drop-zone="1" data-photo-id="${photo.id}" data-slot="">
                     ${photo.badge && photo.badge.trim() ? `<div class="photo-badge-tag absolute top-2 left-2 z-10 bg-red-600 text-white font-black text-xs px-2.5 py-1 rounded shadow-md border border-white max-w-[85%] break-words ${!showBadge ? 'no-print' : ''}">${escapeHtml(photo.badge.trim())}</div>` : ''}
                     ${buildChalkboardHTML(photo)}
                     ${photo.url ? `<img src="${photo.url}" style="transform: rotate(${photo.rotation}deg); object-fit: ${fitMode};" class="w-full h-full max-h-full transition-transform duration-200" alt="공사 현장 사진">` : `
@@ -2842,7 +2896,13 @@
         function handleCardImageUpload(e) {
             if (!e.target.files || e.target.files.length === 0 || !targetCardPhotoId) return;
             const file = e.target.files[0];
-            if (!file.type.startsWith('image/')) return;
+            processImageFileForSlot(file, targetCardPhotoId, targetCardPhotoSlot);
+            targetCardPhotoId = null;
+            targetCardPhotoSlot = null;
+        }
+
+        function processImageFileForSlot(file, photoId, slot) {
+            if (!file || !file.type || !file.type.startsWith('image/') || !photoId) return;
 
             pushUndoSnapshot();
             const qualitySetting = document.getElementById('imageCompressQuality') ? document.getElementById('imageCompressQuality').value : 'normal';
@@ -2854,9 +2914,9 @@
             const preset = COMPRESS_PRESETS[qualitySetting] || COMPRESS_PRESETS.normal;
 
             function assignSlotImage(photo, compressedUrl) {
-                if (targetCardPhotoSlot === 'before') {
+                if (slot === 'before') {
                     photo.beforeUrl = compressedUrl;
-                } else if (targetCardPhotoSlot === 'during') {
+                } else if (slot === 'during') {
                     photo.duringUrl = compressedUrl;
                 } else {
                     photo.url = compressedUrl;
@@ -2877,28 +2937,24 @@
                             if (parts.length > 0) photoDate = parts[0].replace(/:/g, "-");
                         }
                         compressImage(rawImgUrl, preset.maxSide, preset.quality, (compressedUrl) => {
-                            const photo = photoList.find(p => p.id === targetCardPhotoId);
+                            const photo = photoList.find(p => p.id === photoId);
                             if (photo) {
                                 assignSlotImage(photo, compressedUrl);
-                                if (!targetCardPhotoSlot) photo.date = photoDate;
+                                if (!slot) photo.date = photoDate;
                                 renderPhotoSheets();
                                 showToast("사진이 추가/변경되었습니다.");
                             }
-                            targetCardPhotoId = null;
-                            targetCardPhotoSlot = null;
                         });
                     });
                 } catch (err) {
                     compressImage(rawImgUrl, preset.maxSide, preset.quality, (compressedUrl) => {
-                        const photo = photoList.find(p => p.id === targetCardPhotoId);
+                        const photo = photoList.find(p => p.id === photoId);
                         if (photo) {
                             assignSlotImage(photo, compressedUrl);
-                            if (!targetCardPhotoSlot) photo.date = photoDate;
+                            if (!slot) photo.date = photoDate;
                             renderPhotoSheets();
                             showToast("사진이 추가/변경되었습니다.");
                         }
-                        targetCardPhotoId = null;
-                        targetCardPhotoSlot = null;
                     });
                 }
             };

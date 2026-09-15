@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>토목 현장 사진대지 작성 프로그램 V3.9</title>
+    <title>토목 현장 사진대지 작성 프로그램 V4.0</title>
 
     <!-- ===== PWA: Web App Manifest & Favicons ===== -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='512' height='512' viewBox='0 0 512 512'><rect width='512' height='512' rx='100' fill='%230f172a'/><circle cx='256' cy='256' r='220' fill='%231e293b'/><path d='M256 110 C160 110 110 180 110 250 L402 250 C402 180 352 110 256 110 Z' fill='%23f59e0b'/><rect x='80' y='240' width='352' height='32' rx='10' fill='%23d97706'/><rect x='236' y='110' width='40' height='140' fill='%23fbbf24'/><path d='M160 300 H352 V410 H160 Z' fill='%23ffffff' opacity='0.9'/><path d='M180 320 L240 370 L290 335 L332 375 H180 Z' fill='%230f172a'/><circle cx='310' cy='330' r='14' fill='%23f59e0b'/></svg>">
@@ -527,7 +527,7 @@
                     <h1 class="font-black text-lg leading-tight flex items-center gap-2 text-slate-100 tracking-tight truncate">
                         토목 현장 사진대지 작성기
                         <span class="hidden md:inline text-[10px] bg-amber-500/20 text-amber-400 border border-amber-500/40 px-2 py-0.5 rounded-full font-bold tracking-wider uppercase shrink-0">Pro Ultimate</span>
-                        <span class="hidden md:inline text-[10px] bg-slate-700/60 text-slate-300 border border-slate-600/60 px-2 py-0.5 rounded-full font-bold tracking-wider shrink-0">V3.9</span>
+                        <span class="hidden md:inline text-[10px] bg-slate-700/60 text-slate-300 border border-slate-600/60 px-2 py-0.5 rounded-full font-bold tracking-wider shrink-0">V4.0</span>
                     </h1>
                     <p class="hidden sm:block text-[11px] text-slate-400 font-medium truncate">Civil Engineering Site Photo Sheet Generator</p>
                 </div>
@@ -2069,8 +2069,57 @@
             } else if ((e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === 'y' || (e.shiftKey && e.key.toLowerCase() === 'z'))) {
                 e.preventDefault();
                 redoLastAction();
+            } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'c') {
+                if (copySelectedPhotoCards()) e.preventDefault();
+            } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'v') {
+                if (pastedPhotoCardsClipboard.length > 0) {
+                    e.preventDefault();
+                    pastePhotoCardsClipboard();
+                }
             }
         });
+
+        // 사진 카드 복사/붙여넣기 (Ctrl+C / Ctrl+V)
+        // - 선택모드에서 체크된 카드가 있으면 그 카드들을, 없으면 마지막으로 클릭/포커스된 카드 1장을 복사 대상으로 삼는다.
+        let pastedPhotoCardsClipboard = [];
+        let lastFocusedPhotoId = null;
+
+        function copySelectedPhotoCards() {
+            let idsToCopy = [];
+            if (selectionMode && selectedPhotoIds.size > 0) {
+                idsToCopy = photoList.filter(p => selectedPhotoIds.has(p.id)).map(p => p.id);
+            } else if (lastFocusedPhotoId && photoList.some(p => p.id === lastFocusedPhotoId)) {
+                idsToCopy = [lastFocusedPhotoId];
+            }
+            if (idsToCopy.length === 0) return false;
+
+            pastedPhotoCardsClipboard = idsToCopy
+                .map(id => photoList.find(p => p.id === id))
+                .filter(Boolean)
+                .map(p => ({ ...p }));
+
+            showToast(`사진 카드 ${pastedPhotoCardsClipboard.length}장을 복사했습니다. (Ctrl+V로 붙여넣기)`);
+            return true;
+        }
+
+        function pastePhotoCardsClipboard() {
+            if (pastedPhotoCardsClipboard.length === 0) return;
+            saveCurrentInputValues();
+            pushUndoSnapshot();
+
+            const newIds = [];
+            pastedPhotoCardsClipboard.forEach(src => {
+                const clone = {
+                    ...src,
+                    id: 'photo_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5)
+                };
+                photoList.push(clone);
+                newIds.push(clone.id);
+            });
+
+            renderPhotoSheets();
+            showToast(`사진 카드 ${newIds.length}장을 붙여넣었습니다.`);
+        }
 
         // Annotation Editor State & Crop Tool State
         let currentAnnotPhotoId = null;
@@ -4094,7 +4143,7 @@
                     const isMatch = photoMatchesFilter(photo);
 
                     pageHTML += `
-                        <div class="photo-card-block border-2 border-black p-1.5 bg-white flex flex-col justify-between flex-1 min-h-0 relative group overflow-hidden ${filterActive && !isMatch ? 'hidden no-print' : ''} ${selectionMode && selectedPhotoIds.has(photo.id) ? 'ring-4 ring-blue-500' : ''} ${duplicateIds.has(photo.id) ? 'ring-2 ring-rose-500' : (incompleteIds.has(photo.id) ? 'ring-2 ring-amber-400' : '')}" data-id="${photo.id}" data-index="${globalIndex}">
+                        <div onclick="lastFocusedPhotoId='${photo.id}'" class="photo-card-block border-2 border-black p-1.5 bg-white flex flex-col justify-between flex-1 min-h-0 relative group overflow-hidden ${filterActive && !isMatch ? 'hidden no-print' : ''} ${selectionMode && selectedPhotoIds.has(photo.id) ? 'ring-4 ring-blue-500' : ''} ${duplicateIds.has(photo.id) ? 'ring-2 ring-rose-500' : (incompleteIds.has(photo.id) ? 'ring-2 ring-amber-400' : '')}" data-id="${photo.id}" data-index="${globalIndex}">
 
                             ${duplicateIds.has(photo.id) ? `
                             <div class="no-print absolute bottom-2 left-2 z-20 bg-rose-600 text-white text-[10px] font-black px-2 py-1 rounded-lg shadow-lg flex items-center gap-1" title="동일한 사진이 다른 카드에도 등록되어 있습니다">

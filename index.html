@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>토목 현장 사진대지 작성 프로그램 V3.6</title>
+    <title>토목 현장 사진대지 작성 프로그램 V3.7</title>
 
     <!-- ===== PWA: Web App Manifest & Favicons ===== -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='512' height='512' viewBox='0 0 512 512'><rect width='512' height='512' rx='100' fill='%230f172a'/><circle cx='256' cy='256' r='220' fill='%231e293b'/><path d='M256 110 C160 110 110 180 110 250 L402 250 C402 180 352 110 256 110 Z' fill='%23f59e0b'/><rect x='80' y='240' width='352' height='32' rx='10' fill='%23d97706'/><rect x='236' y='110' width='40' height='140' fill='%23fbbf24'/><path d='M160 300 H352 V410 H160 Z' fill='%23ffffff' opacity='0.9'/><path d='M180 320 L240 370 L290 335 L332 375 H180 Z' fill='%230f172a'/><circle cx='310' cy='330' r='14' fill='%23f59e0b'/></svg>">
@@ -527,7 +527,7 @@
                     <h1 class="font-black text-lg leading-tight flex items-center gap-2 text-slate-100 tracking-tight truncate">
                         토목 현장 사진대지 작성기
                         <span class="hidden md:inline text-[10px] bg-amber-500/20 text-amber-400 border border-amber-500/40 px-2 py-0.5 rounded-full font-bold tracking-wider uppercase shrink-0">Pro Ultimate</span>
-                        <span class="hidden md:inline text-[10px] bg-slate-700/60 text-slate-300 border border-slate-600/60 px-2 py-0.5 rounded-full font-bold tracking-wider shrink-0">V3.6</span>
+                        <span class="hidden md:inline text-[10px] bg-slate-700/60 text-slate-300 border border-slate-600/60 px-2 py-0.5 rounded-full font-bold tracking-wider shrink-0">V3.7</span>
                     </h1>
                     <p class="hidden sm:block text-[11px] text-slate-400 font-medium truncate">Civil Engineering Site Photo Sheet Generator</p>
                 </div>
@@ -3271,7 +3271,10 @@
         }
 
         function onBatchComplete(newIds, qualityWarningCount) {
-            if (autoSortOnAddEnabled) {
+            if (currentSortMode !== 'default') {
+                reapplyActiveSortIfAny();
+                renderPhotoSheets();
+            } else if (autoSortOnAddEnabled) {
                 sortPhotos('dateAsc');
             }
 
@@ -3411,6 +3414,7 @@
                     extraValue: ''
                 });
             }
+            reapplyActiveSortIfAny();
             renderPhotoSheets();
             showToast(`${count}개의 빈 사진카드가 추가되었습니다.`);
         }
@@ -4772,6 +4776,7 @@
             photoList.forEach(p => { if (targetIds.includes(p.id)) p.workType = value; });
             lastUsedWorkType = value;
             closeBatchWorkTypeModal();
+            reapplyActiveSortIfAny();
             renderPhotoSheets();
             showToast(`${targetIds.length}장에 "${value}" 공종을 적용했습니다.`);
         }
@@ -5026,6 +5031,7 @@
         }
 
         let originalPhotoOrderSnapshot = null;
+        let currentSortMode = 'default';
 
         function ensureOriginalOrderSnapshot() {
             if (!originalPhotoOrderSnapshot) {
@@ -5038,11 +5044,18 @@
             return idx === -1 ? 999 : idx;
         }
 
-        function sortPhotos(mode) {
-            if (!photoList.length) return;
-            saveCurrentInputValues();
-            pushUndoSnapshot();
+        // 착공전 → 시공전 → 시공중 → 시공후 → 준공 순서. 사진 태그(badge)에 해당 단어가
+        // 포함되어 있으면 그 순번을 부여하고, 없으면 맨 뒤로 보낸다.
+        const BADGE_STAGE_ORDER = ['착공전', '시공전', '시공중', '시공후', '준공'];
+        function getBadgeStagePriority(badge) {
+            const text = (badge || '').trim();
+            for (let i = 0; i < BADGE_STAGE_ORDER.length; i++) {
+                if (text.includes(BADGE_STAGE_ORDER[i])) return i;
+            }
+            return BADGE_STAGE_ORDER.length;
+        }
 
+        function performSort(mode) {
             const collator = new Intl.Collator('ko');
 
             if (mode === 'default') {
@@ -5054,29 +5067,56 @@
                         return ai - bi;
                     });
                 }
-            } else {
-                ensureOriginalOrderSnapshot();
-
-                if (mode === 'dateAsc') {
-                    photoList.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
-                } else if (mode === 'dateDesc') {
-                    photoList.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
-                } else if (mode === 'workType') {
-                    photoList.sort((a, b) => collator.compare(a.workType || '', b.workType || ''));
-                } else if (mode === 'workTypeOrder') {
-                    photoList.sort((a, b) => {
-                        const ai = getWorkTypePriority(a.workType);
-                        const bi = getWorkTypePriority(b.workType);
-                        if (ai !== bi) return ai - bi;
-                        return collator.compare(a.workType || '', b.workType || '');
-                    });
-                } else if (mode === 'location') {
-                    photoList.sort((a, b) => collator.compare(a.location || '', b.location || ''));
-                }
+                return;
             }
+
+            ensureOriginalOrderSnapshot();
+
+            if (mode === 'dateAsc') {
+                photoList.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+            } else if (mode === 'dateDesc') {
+                photoList.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+            } else if (mode === 'workType') {
+                photoList.sort((a, b) => collator.compare(a.workType || '', b.workType || ''));
+            } else if (mode === 'workTypeOrder') {
+                // 1) 공종 지정순서 → 2) 위치 → 3) 태그 단계(착공전~준공) → 4) 내용
+                photoList.sort((a, b) => {
+                    const wtA = getWorkTypePriority(a.workType);
+                    const wtB = getWorkTypePriority(b.workType);
+                    if (wtA !== wtB) return wtA - wtB;
+
+                    const locCompare = collator.compare(a.location || '', b.location || '');
+                    if (locCompare !== 0) return locCompare;
+
+                    const stageA = getBadgeStagePriority(a.badge);
+                    const stageB = getBadgeStagePriority(b.badge);
+                    if (stageA !== stageB) return stageA - stageB;
+
+                    return collator.compare(a.description || '', b.description || '');
+                });
+            } else if (mode === 'location') {
+                photoList.sort((a, b) => collator.compare(a.location || '', b.location || ''));
+            }
+        }
+
+        function sortPhotos(mode) {
+            if (!photoList.length) return;
+            saveCurrentInputValues();
+            pushUndoSnapshot();
+
+            currentSortMode = mode;
+            performSort(mode);
 
             renderPhotoSheets();
             showToast("사진 순서가 재정렬되었습니다.");
+        }
+
+        // 사진이 추가/삭제되어 목록이 바뀔 때, 이전에 선택해둔 정렬 기준을
+        // 다시 고를 필요 없이 자동으로 재적용한다 (기본 등록순일 땐 아무 것도 하지 않음).
+        function reapplyActiveSortIfAny() {
+            if (!currentSortMode || currentSortMode === 'default') return;
+            if (!photoList.length) return;
+            performSort(currentSortMode);
         }
 
         function toggleAdvancedFilterPanel() {

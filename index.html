@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>토목 현장 사진대지 작성 프로그램 V3.5</title>
+    <title>토목 현장 사진대지 작성 프로그램 V3.6</title>
 
     <!-- ===== PWA: Web App Manifest & Favicons ===== -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='512' height='512' viewBox='0 0 512 512'><rect width='512' height='512' rx='100' fill='%230f172a'/><circle cx='256' cy='256' r='220' fill='%231e293b'/><path d='M256 110 C160 110 110 180 110 250 L402 250 C402 180 352 110 256 110 Z' fill='%23f59e0b'/><rect x='80' y='240' width='352' height='32' rx='10' fill='%23d97706'/><rect x='236' y='110' width='40' height='140' fill='%23fbbf24'/><path d='M160 300 H352 V410 H160 Z' fill='%23ffffff' opacity='0.9'/><path d='M180 320 L240 370 L290 335 L332 375 H180 Z' fill='%230f172a'/><circle cx='310' cy='330' r='14' fill='%23f59e0b'/></svg>">
@@ -527,7 +527,7 @@
                     <h1 class="font-black text-lg leading-tight flex items-center gap-2 text-slate-100 tracking-tight truncate">
                         토목 현장 사진대지 작성기
                         <span class="hidden md:inline text-[10px] bg-amber-500/20 text-amber-400 border border-amber-500/40 px-2 py-0.5 rounded-full font-bold tracking-wider uppercase shrink-0">Pro Ultimate</span>
-                        <span class="hidden md:inline text-[10px] bg-slate-700/60 text-slate-300 border border-slate-600/60 px-2 py-0.5 rounded-full font-bold tracking-wider shrink-0">V3.5</span>
+                        <span class="hidden md:inline text-[10px] bg-slate-700/60 text-slate-300 border border-slate-600/60 px-2 py-0.5 rounded-full font-bold tracking-wider shrink-0">V3.6</span>
                     </h1>
                     <p class="hidden sm:block text-[11px] text-slate-400 font-medium truncate">Civil Engineering Site Photo Sheet Generator</p>
                 </div>
@@ -674,6 +674,10 @@
                         <i class="fa-solid fa-filter"></i> 필터
                         <i class="fa-solid fa-chevron-down text-[9px] transition-transform" id="advancedFilterChevron"></i>
                         <span id="advancedFilterBadge" class="hidden absolute -top-1 -right-1 w-2.5 h-2.5 bg-rose-500 rounded-full border border-white"></span>
+                    </button>
+
+                    <button onclick="openStatsModal()" title="총 사진 장수·용량·완성도 요약" class="px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 rounded-lg text-xs font-bold transition shrink-0 flex items-center gap-1.5">
+                        <i class="fa-solid fa-chart-simple"></i> 현황
                     </button>
 
                     <span id="photoCountText" class="text-xs font-bold text-amber-600 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-lg shrink-0">총 0장 / 0페이지</span>
@@ -1511,6 +1515,46 @@
             <div class="flex justify-end gap-2">
                 <button onclick="closeBlankPageCountModal()" class="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs rounded-xl transition">취소</button>
                 <button onclick="confirmAddBlankPages()" class="px-4 py-1.5 bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs rounded-xl shadow transition">추가</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats / Completion Summary Modal -->
+    <div id="statsModal" class="fixed inset-0 bg-slate-950/70 z-50 flex items-center justify-center hidden backdrop-blur-sm no-print p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-5 max-h-[85vh] overflow-y-auto">
+            <div class="flex items-center justify-between mb-3 border-b border-slate-100 pb-2.5">
+                <h3 class="font-extrabold text-sm text-slate-800 flex items-center gap-2">
+                    <span class="w-6 h-6 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center text-xs">
+                        <i class="fa-solid fa-chart-simple"></i>
+                    </span>
+                    현황 요약
+                </h3>
+                <button onclick="closeStatsModal()" class="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 mb-4">
+                <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 text-center">
+                    <div class="text-2xl font-black text-slate-800" id="statsTotalPhotos">0</div>
+                    <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wide mt-0.5">총 사진 장수</div>
+                </div>
+                <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 text-center">
+                    <div class="text-2xl font-black text-slate-800" id="statsTotalSize">0 KB</div>
+                    <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wide mt-0.5">예상 용량</div>
+                </div>
+            </div>
+
+            <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">완성도 체크</p>
+            <div id="statsCompletionList" class="space-y-1 mb-4"></div>
+
+            <div class="grid grid-cols-2 gap-2">
+                <button onclick="toggleIncompleteFilter(); closeStatsModal();" class="px-3 py-2 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-xl text-xs font-bold text-amber-700 transition">
+                    미분류만 보기
+                </button>
+                <button onclick="toggleDuplicateFilter(); closeStatsModal();" class="px-3 py-2 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-xl text-xs font-bold text-rose-700 transition">
+                    중복만 보기
+                </button>
             </div>
         </div>
     </div>
@@ -2682,7 +2726,7 @@
         }
 
         function isAnyModalOpen() {
-            const modalIds = ['settingsModal', 'phraseModal', 'siteMapPinModal', 'batchWorkTypeModal', 'blankPageCountModal', 'customConfirmModal', 'projectStorePanel', 'missingFieldModal', 'pwaGuideModal', 'annotationModal'];
+            const modalIds = ['settingsModal', 'phraseModal', 'siteMapPinModal', 'batchWorkTypeModal', 'blankPageCountModal', 'statsModal', 'customConfirmModal', 'projectStorePanel', 'missingFieldModal', 'pwaGuideModal', 'annotationModal'];
             return modalIds.some(id => {
                 const el = document.getElementById(id);
                 return el && !el.classList.contains('hidden');
@@ -5111,6 +5155,84 @@
                 if (showFieldDescription && !(photo.description || '').trim()) { ids.add(photo.id); return; }
             });
             return ids;
+        }
+
+        function computePhotoStats() {
+            let missingImage = 0, missingWorkType = 0, missingDate = 0, missingLocation = 0, missingDescription = 0;
+            let totalBytes = 0;
+
+            photoList.forEach(photo => {
+                if (!photo.url) missingImage++;
+                if (showFieldWorkType && !(photo.workType || '').trim()) missingWorkType++;
+                if (showFieldDate && !photo.date) missingDate++;
+                if (showFieldLocation && !(photo.location || '').trim()) missingLocation++;
+                if (showFieldDescription && !(photo.description || '').trim()) missingDescription++;
+
+                [photo.url, photo.beforeUrl, photo.duringUrl].forEach(u => {
+                    if (u) totalBytes += u.length * 0.75;
+                });
+            });
+
+            if (siteMapUrl) totalBytes += siteMapUrl.length * 0.75;
+
+            return {
+                totalPhotos: photoList.length,
+                missingImage, missingWorkType, missingDate, missingLocation, missingDescription,
+                totalBytes,
+                duplicateCount: detectDuplicatePhotoIds().size,
+                incompleteCount: detectIncompletePhotoIds().size
+            };
+        }
+
+        function formatBytes(bytes) {
+            if (bytes < 1024) return Math.round(bytes) + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / 1024 / 1024).toFixed(1) + ' MB';
+        }
+
+        function renderStatsModal() {
+            const stats = computePhotoStats();
+
+            const totalEl = document.getElementById('statsTotalPhotos');
+            const sizeEl = document.getElementById('statsTotalSize');
+            if (totalEl) totalEl.textContent = stats.totalPhotos;
+            if (sizeEl) sizeEl.textContent = formatBytes(stats.totalBytes);
+
+            const rows = [
+                { label: '사진 없는 빈 카드', count: stats.missingImage },
+            ];
+            if (showFieldWorkType) rows.push({ label: '공종 누락', count: stats.missingWorkType });
+            if (showFieldDate) rows.push({ label: '날짜 누락', count: stats.missingDate });
+            if (showFieldLocation) rows.push({ label: '위치 누락', count: stats.missingLocation });
+            if (showFieldDescription) rows.push({ label: '내용 누락', count: stats.missingDescription });
+            rows.push({ label: '중복 의심 사진', count: stats.duplicateCount });
+
+            const listEl = document.getElementById('statsCompletionList');
+            if (listEl) {
+                listEl.innerHTML = rows.map(r => `
+                    <div class="flex items-center justify-between px-2.5 py-1.5 rounded-lg ${r.count > 0 ? 'bg-amber-50' : 'bg-emerald-50'} text-xs">
+                        <span class="font-semibold ${r.count > 0 ? 'text-amber-700' : 'text-emerald-700'}">${r.label}</span>
+                        <span class="font-black ${r.count > 0 ? 'text-amber-700' : 'text-emerald-700'}">${r.count > 0 ? r.count + '개' : '✓ 없음'}</span>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function openStatsModal() {
+            renderStatsModal();
+            const modal = document.getElementById('statsModal');
+            if (modal) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            }
+        }
+
+        function closeStatsModal() {
+            const modal = document.getElementById('statsModal');
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
         }
 
         function setIncompleteFilterButtonStyle() {

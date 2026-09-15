@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>토목 현장 사진대지 작성 프로그램 V4.4</title>
+    <title>토목 현장 사진대지 작성 프로그램 V4.5</title>
 
     <!-- ===== PWA: Web App Manifest & Favicons ===== -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='512' height='512' viewBox='0 0 512 512'><rect width='512' height='512' rx='100' fill='%230f172a'/><circle cx='256' cy='256' r='220' fill='%231e293b'/><path d='M256 110 C160 110 110 180 110 250 L402 250 C402 180 352 110 256 110 Z' fill='%23f59e0b'/><rect x='80' y='240' width='352' height='32' rx='10' fill='%23d97706'/><rect x='236' y='110' width='40' height='140' fill='%23fbbf24'/><path d='M160 300 H352 V410 H160 Z' fill='%23ffffff' opacity='0.9'/><path d='M180 320 L240 370 L290 335 L332 375 H180 Z' fill='%230f172a'/><circle cx='310' cy='330' r='14' fill='%23f59e0b'/></svg>">
@@ -527,7 +527,7 @@
                     <h1 class="font-black text-lg leading-tight flex items-center gap-2 text-slate-100 tracking-tight truncate">
                         토목 현장 사진대지 작성기
                         <span class="hidden md:inline text-[10px] bg-amber-500/20 text-amber-400 border border-amber-500/40 px-2 py-0.5 rounded-full font-bold tracking-wider uppercase shrink-0">Pro Ultimate</span>
-                        <span class="hidden md:inline text-[10px] bg-slate-700/60 text-slate-300 border border-slate-600/60 px-2 py-0.5 rounded-full font-bold tracking-wider shrink-0">V4.4</span>
+                        <span class="hidden md:inline text-[10px] bg-slate-700/60 text-slate-300 border border-slate-600/60 px-2 py-0.5 rounded-full font-bold tracking-wider shrink-0">V4.5</span>
                     </h1>
                     <p class="hidden sm:block text-[11px] text-slate-400 font-medium truncate">Civil Engineering Site Photo Sheet Generator</p>
                 </div>
@@ -656,7 +656,7 @@
             <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-3">
                 <div class="flex flex-wrap items-center gap-2">
                     <i class="fa-solid fa-magnifying-glass text-slate-400 text-xs shrink-0"></i>
-                    <input type="text" id="photoSearchInput" oninput="applyPhotoFilter()" placeholder="공종, 위치, 내용, 태그로 검색..." class="flex-1 min-w-[140px] px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs outline-none focus:ring-2 focus:ring-amber-500/50">
+                    <input type="text" id="photoSearchInput" oninput="applyPhotoFilter()" placeholder="공종, 세부항목, 위치, 내용, 태그로 검색..." class="flex-1 min-w-[140px] px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs outline-none focus:ring-2 focus:ring-amber-500/50">
 
                     <div class="flex items-center gap-1 shrink-0">
                         <i class="fa-solid fa-arrow-down-short-wide text-amber-500 text-xs"></i>
@@ -665,7 +665,7 @@
                             <option value="dateAsc">촬영일자 (오름차순 ⬆)</option>
                             <option value="dateDesc">촬영일자 (내림차순 ⬇)</option>
                             <option value="workType">공종명 (가나다순)</option>
-                            <option value="workTypeOrder">공종 지정순서 (등록함 순서)</option>
+                            <option value="workTypeOrder">공종 지정순서 (세부항목순 포함)</option>
                             <option value="location">위치/측점순</option>
                         </select>
                         <button onclick="resortPhotos()" title="현재 정렬 기준으로 다시 정렬" class="px-2 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-xs transition shrink-0">
@@ -1988,9 +1988,29 @@
         let batchWorkTypeTargetIds = [];
 
         // Standard Work Type (공종) Library
+        // 공정(공종) 목록. 각 항목은 { name: '구조물공사', subTypes: ['조경석','계단석',...] } 구조.
+        // 구버전 프로젝트 파일(문자열 배열)을 불러올 때는 normalizeWorkTypes()에서 이 구조로 변환한다.
         let standardWorkTypes = [
-            "토공사", "배수공사", "포장공사", "구조물공사", "조경공사", "가시설공사"
+            { name: "토공사", subTypes: [] },
+            { name: "배수공사", subTypes: [] },
+            { name: "포장공사", subTypes: [] },
+            { name: "구조물공사", subTypes: [] },
+            { name: "조경공사", subTypes: [] },
+            { name: "가시설공사", subTypes: [] }
         ];
+
+        // 문자열 배열(구버전) 또는 객체 배열을 항상 { name, subTypes } 객체 배열로 정규화한다.
+        function normalizeWorkTypes(list) {
+            if (!Array.isArray(list)) return [];
+            return list.map(wt => {
+                if (typeof wt === 'string') return { name: wt, subTypes: [] };
+                return { name: wt.name || '', subTypes: Array.isArray(wt.subTypes) ? wt.subTypes : [] };
+            });
+        }
+
+        function workTypeNames() {
+            return standardWorkTypes.map(wt => wt.name);
+        }
 
         // Standard Phrase Library
         let standardPhrases = [
@@ -2346,7 +2366,7 @@
                 if (document.getElementById('coverStyleSelect')) document.getElementById('coverStyleSelect').value = coverStyle;
             }
             if (data.standardWorkTypes !== undefined && Array.isArray(data.standardWorkTypes)) {
-                standardWorkTypes = data.standardWorkTypes;
+                standardWorkTypes = normalizeWorkTypes(data.standardWorkTypes);
             }
             if (data.completionMode !== undefined) {
                 completionMode = data.completionMode;
@@ -2591,16 +2611,18 @@
         }
 
         let editingWorkTypeIdx = null;
+        let expandedWorkTypeIdx = null; // 세부항목 목록을 펼쳐서 보여주는 공종 idx
 
         function renderWorkTypeChips() {
             const listEl = document.getElementById('workTypeChipList');
             if (!listEl) return;
             listEl.innerHTML = standardWorkTypes.map((wt, idx) => {
+                const subTypes = wt.subTypes || [];
                 if (editingWorkTypeIdx === idx) {
                     return `
                         <div class="flex items-center gap-2 p-1.5 bg-teal-50 border border-teal-300 ring-2 ring-teal-300 rounded-xl text-xs">
                             <span class="w-5 h-5 flex items-center justify-center bg-teal-600 text-white font-black rounded-full text-[10px] shrink-0">${idx + 1}</span>
-                            <input type="text" id="editWorkTypeInput_${idx}" value="${escapeHtml(wt)}"
+                            <input type="text" id="editWorkTypeInput_${idx}" value="${escapeHtml(wt.name)}"
                                    onkeydown="if(event.key==='Enter'){saveWorkTypeEdit(${idx});} else if(event.key==='Escape'){cancelWorkTypeEdit();}"
                                    class="flex-1 min-w-0 px-1.5 py-0.5 border border-teal-300 rounded-lg outline-none font-bold text-teal-900 bg-white">
                             <div class="flex items-center gap-0.5 shrink-0">
@@ -2610,16 +2632,41 @@
                         </div>
                     `;
                 }
+                const isExpanded = expandedWorkTypeIdx === idx;
                 return `
-                    <div class="flex items-center gap-2 p-1.5 bg-teal-50 border border-teal-200 rounded-xl text-xs">
-                        <span class="w-5 h-5 flex items-center justify-center bg-teal-600 text-white font-black rounded-full text-[10px] shrink-0">${idx + 1}</span>
-                        <button type="button" onclick="applyWorkTypeToCard(${idx})" title="클릭하여 현재 사진 카드에 적용" class="flex-1 min-w-0 text-left font-bold text-teal-800 hover:text-teal-900 truncate">${escapeHtml(wt)}</button>
-                        <div class="flex items-center gap-0.5 shrink-0">
-                            <button onclick="startWorkTypeEdit(${idx})" title="이름 수정" class="w-5 h-5 flex items-center justify-center text-teal-500 hover:text-teal-800"><i class="fa-solid fa-pen text-[10px]"></i></button>
-                            <button onclick="moveWorkType(${idx}, -1)" title="순서 위로" ${idx === 0 ? 'disabled' : ''} class="w-5 h-5 flex items-center justify-center text-teal-500 hover:text-teal-800 disabled:opacity-20 disabled:cursor-not-allowed"><i class="fa-solid fa-chevron-up text-[10px]"></i></button>
-                            <button onclick="moveWorkType(${idx}, 1)" title="순서 아래로" ${idx === standardWorkTypes.length - 1 ? 'disabled' : ''} class="w-5 h-5 flex items-center justify-center text-teal-500 hover:text-teal-800 disabled:opacity-20 disabled:cursor-not-allowed"><i class="fa-solid fa-chevron-down text-[10px]"></i></button>
-                            <button onclick="deleteWorkType(${idx})" title="공정 삭제" class="w-5 h-5 flex items-center justify-center text-slate-400 hover:text-rose-600"><i class="fa-solid fa-xmark text-[10px]"></i></button>
+                    <div class="bg-teal-50 border border-teal-200 rounded-xl text-xs overflow-hidden">
+                        <div class="flex items-center gap-2 p-1.5">
+                            <span class="w-5 h-5 flex items-center justify-center bg-teal-600 text-white font-black rounded-full text-[10px] shrink-0">${idx + 1}</span>
+                            <button type="button" onclick="applyWorkTypeToCard(${idx})" title="클릭하여 현재 사진 카드에 적용" class="flex-1 min-w-0 text-left font-bold text-teal-800 hover:text-teal-900 truncate">${escapeHtml(wt.name)}</button>
+                            <div class="flex items-center gap-0.5 shrink-0">
+                                <button onclick="toggleWorkTypeExpand(${idx})" title="세부항목 관리" class="px-1.5 h-5 flex items-center justify-center gap-0.5 text-[10px] font-bold rounded-md ${isExpanded ? 'bg-teal-600 text-white' : 'text-teal-600 hover:bg-teal-100'}">
+                                    <i class="fa-solid fa-list-ul text-[9px]"></i>${subTypes.length > 0 ? subTypes.length : ''}
+                                </button>
+                                <button onclick="startWorkTypeEdit(${idx})" title="이름 수정" class="w-5 h-5 flex items-center justify-center text-teal-500 hover:text-teal-800"><i class="fa-solid fa-pen text-[10px]"></i></button>
+                                <button onclick="moveWorkType(${idx}, -1)" title="순서 위로" ${idx === 0 ? 'disabled' : ''} class="w-5 h-5 flex items-center justify-center text-teal-500 hover:text-teal-800 disabled:opacity-20 disabled:cursor-not-allowed"><i class="fa-solid fa-chevron-up text-[10px]"></i></button>
+                                <button onclick="moveWorkType(${idx}, 1)" title="순서 아래로" ${idx === standardWorkTypes.length - 1 ? 'disabled' : ''} class="w-5 h-5 flex items-center justify-center text-teal-500 hover:text-teal-800 disabled:opacity-20 disabled:cursor-not-allowed"><i class="fa-solid fa-chevron-down text-[10px]"></i></button>
+                                <button onclick="deleteWorkType(${idx})" title="공정 삭제" class="w-5 h-5 flex items-center justify-center text-slate-400 hover:text-rose-600"><i class="fa-solid fa-xmark text-[10px]"></i></button>
+                            </div>
                         </div>
+                        ${isExpanded ? `
+                        <div class="px-2 pb-2 pt-1 border-t border-teal-100 bg-white/60">
+                            <div class="space-y-1">
+                                ${subTypes.map((st, sIdx) => `
+                                    <div class="flex items-center gap-1.5 pl-6 text-[11px]">
+                                        <i class="fa-solid fa-turn-up fa-rotate-90 text-teal-300 text-[9px]"></i>
+                                        <span class="flex-1 min-w-0 truncate text-slate-700">${escapeHtml(st)}</span>
+                                        <button onclick="moveSubType(${idx}, ${sIdx}, -1)" title="순서 위로" ${sIdx === 0 ? 'disabled' : ''} class="w-4 h-4 flex items-center justify-center text-teal-400 hover:text-teal-700 disabled:opacity-20"><i class="fa-solid fa-chevron-up text-[8px]"></i></button>
+                                        <button onclick="moveSubType(${idx}, ${sIdx}, 1)" title="순서 아래로" ${sIdx === subTypes.length - 1 ? 'disabled' : ''} class="w-4 h-4 flex items-center justify-center text-teal-400 hover:text-teal-700 disabled:opacity-20"><i class="fa-solid fa-chevron-down text-[8px]"></i></button>
+                                        <button onclick="deleteSubType(${idx}, ${sIdx})" title="세부항목 삭제" class="w-4 h-4 flex items-center justify-center text-slate-300 hover:text-rose-600"><i class="fa-solid fa-xmark text-[8px]"></i></button>
+                                    </div>
+                                `).join('') || `<p class="pl-6 text-[10px] text-slate-400">등록된 세부항목이 없습니다.</p>`}
+                            </div>
+                            <div class="flex gap-1.5 mt-1.5 pl-6">
+                                <input type="text" id="newSubTypeInput_${idx}" placeholder="세부항목 입력 (예: 조경석)" onkeydown="if(event.key==='Enter'){addNewSubType(${idx});}" class="flex-1 min-w-0 px-2 py-1 border border-teal-200 rounded-lg text-[11px] outline-none focus:ring-2 focus:ring-teal-500/40">
+                                <button onclick="addNewSubType(${idx})" class="px-2.5 py-1 bg-teal-500 hover:bg-teal-600 text-white font-bold text-[10px] rounded-lg shrink-0">추가</button>
+                            </div>
+                        </div>
+                        ` : ''}
                     </div>
                 `;
             }).join('') || `<p class="text-[11px] text-slate-400 py-2">등록된 공정이 없습니다. 아래에서 추가해 보세요.</p>`;
@@ -2628,6 +2675,98 @@
                 const inputEl = document.getElementById(`editWorkTypeInput_${editingWorkTypeIdx}`);
                 if (inputEl) { inputEl.focus(); inputEl.select(); }
             }
+        }
+
+        function toggleWorkTypeExpand(idx) {
+            expandedWorkTypeIdx = (expandedWorkTypeIdx === idx) ? null : idx;
+            renderWorkTypeChips();
+        }
+
+        function addNewSubType(idx) {
+            const input = document.getElementById(`newSubTypeInput_${idx}`);
+            if (!input || !input.value.trim()) return;
+            const wt = standardWorkTypes[idx];
+            if (!wt) return;
+            if (!wt.subTypes) wt.subTypes = [];
+            wt.subTypes.push(input.value.trim());
+            renderWorkTypeChips();
+            scheduleAutoSave();
+            showToast(`"${escapeHtml(wt.name)}"에 세부항목이 추가되었습니다.`);
+        }
+
+        function deleteSubType(idx, sIdx) {
+            const wt = standardWorkTypes[idx];
+            if (!wt || !wt.subTypes) return;
+            wt.subTypes.splice(sIdx, 1);
+            renderWorkTypeChips();
+            scheduleAutoSave();
+        }
+
+        function moveSubType(idx, sIdx, direction) {
+            const wt = standardWorkTypes[idx];
+            if (!wt || !wt.subTypes) return;
+            const newIdx = sIdx + direction;
+            if (newIdx < 0 || newIdx >= wt.subTypes.length) return;
+            const temp = wt.subTypes[sIdx];
+            wt.subTypes[sIdx] = wt.subTypes[newIdx];
+            wt.subTypes[newIdx] = temp;
+            renderWorkTypeChips();
+            scheduleAutoSave();
+        }
+
+        // 세부항목 빠른 선택: 사진 카드의 목록 아이콘을 누르면 해당 카드의 공종에
+        // 등록된 세부항목 목록을 프롬프트로 보여준다 (간단한 선택 UI).
+        function openSubTypeQuickPick(photoId) {
+            const photo = photoList.find(p => p.id === photoId);
+            if (!photo) return;
+            const wt = standardWorkTypes.find(w => (w.name || '').trim() === (photo.workType || '').trim());
+            const subTypes = (wt && wt.subTypes) || [];
+            if (subTypes.length === 0) {
+                showToast(`"${escapeHtml(photo.workType || '(공종 미지정)')}"에 등록된 세부항목이 없습니다. 공정(공종) 등록에서 먼저 추가해 주세요.`);
+                return;
+            }
+            window.__targetSubTypePhotoId = photoId;
+            openSubTypePickModal(subTypes, wt.name);
+        }
+
+        function openSubTypePickModal(subTypes, workTypeName) {
+            let modal = document.getElementById('subTypePickModal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'subTypePickModal';
+                modal.className = 'fixed inset-0 bg-slate-950/70 z-[60] flex items-center justify-center backdrop-blur-sm no-print p-4';
+                modal.innerHTML = `
+                    <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-4">
+                        <div class="flex items-center justify-between mb-2.5">
+                            <p class="text-xs font-bold text-slate-700" id="subTypePickModalTitle"></p>
+                            <button onclick="document.getElementById('subTypePickModal').remove()" class="w-6 h-6 flex items-center justify-center text-slate-400 hover:text-rose-600"><i class="fa-solid fa-xmark"></i></button>
+                        </div>
+                        <div id="subTypePickModalList" class="space-y-1 max-h-64 overflow-y-auto"></div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+            }
+            document.getElementById('subTypePickModalTitle').innerText = `"${workTypeName}" 세부항목 선택`;
+            document.getElementById('subTypePickModalList').innerHTML = subTypes.map(st => `
+                <button onclick="applySubTypeToCard('${escapeHtml(st)}')" class="w-full text-left px-3 py-2 bg-teal-50 hover:bg-teal-100 rounded-lg text-xs font-semibold text-teal-800 transition">${escapeHtml(st)}</button>
+            `).join('');
+        }
+
+        function applySubTypeToCard(subTypeValue) {
+            const photoId = window.__targetSubTypePhotoId;
+            const photo = photoId && photoList.find(p => p.id === photoId);
+            const modal = document.getElementById('subTypePickModal');
+            if (modal) modal.remove();
+            if (!photo) return;
+            photo.subType = subTypeValue;
+            const input = document.getElementById(`subtype_${photoId}`);
+            if (input) {
+                input.value = subTypeValue;
+            } else {
+                renderPhotoSheets();
+            }
+            scheduleAutoSave();
+            showToast("세부항목이 적용되었습니다.");
         }
 
         function startWorkTypeEdit(idx) {
@@ -2649,8 +2788,8 @@
                 return;
             }
 
-            const oldValue = (standardWorkTypes[idx] || '').trim();
-            standardWorkTypes[idx] = newValue;
+            const oldValue = (standardWorkTypes[idx].name || '').trim();
+            standardWorkTypes[idx].name = newValue;
             editingWorkTypeIdx = null;
             renderWorkTypeChips();
             scheduleAutoSave();
@@ -2687,8 +2826,9 @@
         }
 
         function applyWorkTypeToCard(idx) {
-            const workType = standardWorkTypes[idx];
-            if (workType === undefined) return;
+            const wt = standardWorkTypes[idx];
+            if (!wt) return;
+            const workType = wt.name;
 
             const photoId = window.__targetPhrasePhotoId;
             if (!photoId) {
@@ -2717,7 +2857,7 @@
         function addNewWorkType() {
             const input = document.getElementById('newWorkTypeInput');
             if (!input || !input.value.trim()) return;
-            standardWorkTypes.push(input.value.trim());
+            standardWorkTypes.push({ name: input.value.trim(), subTypes: [] });
             input.value = '';
             renderWorkTypeChips();
             scheduleAutoSave();
@@ -2726,6 +2866,7 @@
 
         function deleteWorkType(idx) {
             standardWorkTypes.splice(idx, 1);
+            if (expandedWorkTypeIdx === idx) expandedWorkTypeIdx = null;
             renderWorkTypeChips();
             scheduleAutoSave();
         }
@@ -3370,6 +3511,7 @@
                 id: 'photo_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
                 url: '', originalUrl: '', beforeUrl: '', duringUrl: '',
                 workType: lastUsedWorkType || '토공사',
+                subType: '',
                 date: '',
                 location: 'STA 0+000',
                 description: '',
@@ -3477,6 +3619,7 @@
                     url: '',
                     originalUrl: '',
                     workType: '토공사',
+                    subType: '',
                     date: '',
                     location: 'STA 0+000',
                     description: '',
@@ -3502,6 +3645,7 @@
                 url: '',
                 originalUrl: '',
                 workType: lastUsedWorkType || '토공사',
+                subType: '',
                 date: '',
                 location: 'STA 0+000',
                 description: '',
@@ -3595,12 +3739,14 @@
                 const photo = photoList.find(p => p.id === id);
                 if (photo) {
                     const workTypeInput = block.querySelector('input[placeholder*="공종"]');
+                    const subTypeInput = block.querySelector('input[placeholder*="세부항목"]');
                     const dateInput = block.querySelector('input[type="date"]');
                     const locationInput = block.querySelector('input[placeholder*="위치"]');
                     const descInput = block.querySelector('textarea');
                     const extraInput = block.querySelector(`input[placeholder*="${extraFieldLabel}"]`);
 
                     if (workTypeInput) photo.workType = workTypeInput.value;
+                    if (subTypeInput) photo.subType = subTypeInput.value;
                     if (dateInput) photo.date = dateInput.value;
                     if (locationInput) photo.location = locationInput.value;
                     if (descInput) photo.description = descInput.value;
@@ -3672,6 +3818,15 @@
                                        class="w-full min-w-0 flex-1 pl-1.5 pr-1 py-0.5 ${valueFontClass} outline-none" 
                                        placeholder="공종 입력">
                                 <button onclick="openPhraseModalForCard('${photo.id}')" title="등록된 공정에서 선택" class="no-print text-slate-400 hover:text-teal-600 px-1 shrink-0"><i class="fa-solid fa-diagram-project text-xs"></i></button>
+                            </div>
+                            <div class="flex items-center min-w-0 border-t border-slate-100 mt-0.5 pt-0.5">
+                                <input type="text" 
+                                       id="subtype_${photo.id}"
+                                       value="${escapeHtml(photo.subType || '')}" 
+                                       oninput="updatePhotoData('${photo.id}', 'subType', this.value)" 
+                                       class="w-full min-w-0 flex-1 pl-1.5 pr-1 py-0.5 text-[10px] text-slate-500 outline-none" 
+                                       placeholder="세부항목 (예: 조경석)">
+                                <button onclick="openSubTypeQuickPick('${photo.id}')" title="등록된 세부항목에서 선택" class="no-print text-slate-300 hover:text-teal-600 px-1 shrink-0"><i class="fa-solid fa-list text-[10px]"></i></button>
                             </div>
                         </td>`
             };
@@ -4141,7 +4296,7 @@
                 if (incompleteFilterActive && !incompleteIds.has(photo.id)) return false;
                 if (selectedWorkType && (photo.workType || '').trim() !== selectedWorkType) return false;
                 if (keyword) {
-                    const haystack = [photo.workType, photo.location, photo.description, photo.badge, photo.extraValue]
+                    const haystack = [photo.workType, photo.subType, photo.location, photo.description, photo.badge, photo.extraValue]
                         .filter(Boolean).join(' ').toLowerCase();
                     if (!haystack.includes(keyword)) return false;
                 }
@@ -4863,7 +5018,7 @@
             const selectEl = document.getElementById('batchWorkTypeSelect');
             if (selectEl) {
                 selectEl.innerHTML = `<option value="">-- 공종 선택 --</option>` +
-                    standardWorkTypes.map(wt => `<option value="${escapeHtml(wt)}">${escapeHtml(wt)}</option>`).join('');
+                    standardWorkTypes.map(wt => `<option value="${escapeHtml(wt.name)}">${escapeHtml(wt.name)}</option>`).join('');
             }
             const modal = document.getElementById('batchWorkTypeModal');
             if (modal) {
@@ -5160,7 +5315,16 @@
         }
 
         function getWorkTypePriority(workType) {
-            const idx = standardWorkTypes.indexOf((workType || '').trim());
+            const idx = standardWorkTypes.findIndex(wt => wt.name === (workType || '').trim());
+            return idx === -1 ? 999 : idx;
+        }
+
+        // 같은 공종 안에서 세부항목 등록 순서를 기준으로 우선순위를 부여한다.
+        // 세부항목이 미등록이거나 목록에 없는 값이면 맨 뒤로 보낸다.
+        function getSubTypePriority(workType, subType) {
+            const wt = standardWorkTypes.find(w => w.name === (workType || '').trim());
+            if (!wt || !wt.subTypes) return 999;
+            const idx = wt.subTypes.indexOf((subType || '').trim());
             return idx === -1 ? 999 : idx;
         }
 
@@ -5199,11 +5363,15 @@
             } else if (mode === 'workType') {
                 photoList.sort((a, b) => collator.compare(a.workType || '', b.workType || ''));
             } else if (mode === 'workTypeOrder') {
-                // 1) 공종 지정순서 → 2) 위치 → 3) 내용 → 4) 태그 단계(착공전~준공)
+                // 1) 공종 지정순서 → 2) 세부항목 지정순서 → 3) 위치 → 4) 내용 → 5) 태그 단계(착공전~준공)
                 photoList.sort((a, b) => {
                     const wtA = getWorkTypePriority(a.workType);
                     const wtB = getWorkTypePriority(b.workType);
                     if (wtA !== wtB) return wtA - wtB;
+
+                    const stA = getSubTypePriority(a.workType, a.subType);
+                    const stB = getSubTypePriority(b.workType, b.subType);
+                    if (stA !== stB) return stA - stB;
 
                     const locCompare = collator.compare(a.location || '', b.location || '');
                     if (locCompare !== 0) return locCompare;
@@ -6198,16 +6366,19 @@
                 '            var badgeEl = block.querySelector(".photo-badge-tag");\n' +
                 '            var badge = badgeEl ? badgeEl.textContent.trim() : "";\n' +
                 '            var workTypeInput = block.querySelector(\'input[placeholder*="공종"]\');\n' +
+                '            var subTypeInput = block.querySelector(\'input[placeholder*="세부항목"]\');\n' +
                 '            var dateInput = block.querySelector(\'input[type="date"]\');\n' +
                 '            var locationInput = block.querySelector(\'input[placeholder*="위치"]\');\n' +
                 '            var descInput = block.querySelector("textarea");\n' +
-                '            var extraInput = block.querySelector(\'input[placeholder*="입력"]:not([placeholder*="공종"]):not([placeholder*="위치"])\');\n' +
+                '            var extraInput = block.querySelector(\'input[placeholder*="입력"]:not([placeholder*="공종"]):not([placeholder*="위치"]):not([placeholder*="세부항목"])\');\n' +
                 '            var workType = workTypeInput ? workTypeInput.value : "";\n' +
+                '            var subType = subTypeInput ? subTypeInput.value : "";\n' +
                 '            var dateVal = dateInput ? dateInput.value : "";\n' +
                 '            var locVal = locationInput ? locationInput.value : "";\n' +
                 '            var descVal = descInput ? descInput.value : "";\n' +
                 '            var extraVal = extraInput ? extraInput.value : "";\n' +
                 '            if (workTypeInput) workTypeInput.setAttribute("value", workType);\n' +
+                '            if (subTypeInput) subTypeInput.setAttribute("value", subType);\n' +
                 '            if (dateInput) dateInput.setAttribute("value", dateVal);\n' +
                 '            if (locationInput) locationInput.setAttribute("value", locVal);\n' +
                 '            if (descInput) descInput.textContent = descVal;\n' +
@@ -6217,6 +6388,7 @@
                 '                url: imgUrl,\n' +
                 '                originalUrl: imgUrl,\n' +
                 '                workType: workType,\n' +
+                '                subType: subType,\n' +
                 '                date: dateVal,\n' +
                 '                location: locVal,\n' +
                 '                description: descVal,\n' +
@@ -6445,12 +6617,14 @@
                         const badge = badgeEl ? badgeEl.textContent.trim() : '';
 
                         const workTypeInput = block.querySelector('input[placeholder*="공종"]');
+                        const subTypeInput = block.querySelector('input[placeholder*="세부항목"]');
                         const dateInput = block.querySelector('input[type="date"]');
                         const locationInput = block.querySelector('input[placeholder*="위치"]');
                         const descInput = block.querySelector('textarea');
                         const extraInput = block.querySelector(`input[placeholder*="${extraFieldLabel}"]`);
 
                         const workType = workTypeInput ? (workTypeInput.getAttribute('value') || workTypeInput.value || '') : '토공사';
+                        const subType = subTypeInput ? (subTypeInput.getAttribute('value') || subTypeInput.value || '') : '';
                         const date = dateInput ? (dateInput.getAttribute('value') || dateInput.value || '') : '';
                         const location = locationInput ? (locationInput.getAttribute('value') || locationInput.value || '') : '';
                         const description = descInput ? (descInput.textContent || descInput.value || '') : '';
@@ -6461,6 +6635,7 @@
                             url: imgUrl,
                             originalUrl: imgUrl,
                             workType: workType,
+                            subType: subType,
                             date: date,
                             location: location,
                             description: description,

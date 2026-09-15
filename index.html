@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>토목 현장 사진대지 작성 프로그램 V4.2</title>
+    <title>토목 현장 사진대지 작성 프로그램 V4.3</title>
 
     <!-- ===== PWA: Web App Manifest & Favicons ===== -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='512' height='512' viewBox='0 0 512 512'><rect width='512' height='512' rx='100' fill='%230f172a'/><circle cx='256' cy='256' r='220' fill='%231e293b'/><path d='M256 110 C160 110 110 180 110 250 L402 250 C402 180 352 110 256 110 Z' fill='%23f59e0b'/><rect x='80' y='240' width='352' height='32' rx='10' fill='%23d97706'/><rect x='236' y='110' width='40' height='140' fill='%23fbbf24'/><path d='M160 300 H352 V410 H160 Z' fill='%23ffffff' opacity='0.9'/><path d='M180 320 L240 370 L290 335 L332 375 H180 Z' fill='%230f172a'/><circle cx='310' cy='330' r='14' fill='%23f59e0b'/></svg>">
@@ -527,7 +527,7 @@
                     <h1 class="font-black text-lg leading-tight flex items-center gap-2 text-slate-100 tracking-tight truncate">
                         토목 현장 사진대지 작성기
                         <span class="hidden md:inline text-[10px] bg-amber-500/20 text-amber-400 border border-amber-500/40 px-2 py-0.5 rounded-full font-bold tracking-wider uppercase shrink-0">Pro Ultimate</span>
-                        <span class="hidden md:inline text-[10px] bg-slate-700/60 text-slate-300 border border-slate-600/60 px-2 py-0.5 rounded-full font-bold tracking-wider shrink-0">V4.2</span>
+                        <span class="hidden md:inline text-[10px] bg-slate-700/60 text-slate-300 border border-slate-600/60 px-2 py-0.5 rounded-full font-bold tracking-wider shrink-0">V4.3</span>
                     </h1>
                     <p class="hidden sm:block text-[11px] text-slate-400 font-medium truncate">Civil Engineering Site Photo Sheet Generator</p>
                 </div>
@@ -2247,6 +2247,7 @@
                 coverPeriod: coverPeriod,
                 coverDate: coverDate,
                 coverYearMonth: coverYearMonth,
+                photoSortMode: document.getElementById('photoSortSelect') ? document.getElementById('photoSortSelect').value : currentSortMode,
                 photoList: photoList
             };
         }
@@ -2410,6 +2411,22 @@
             if (data.coverYearMonth !== undefined && document.getElementById('coverYearMonthInput')) document.getElementById('coverYearMonthInput').value = data.coverYearMonth;
 
             photoList = data.photoList || [];
+
+            // 저장 당시 선택돼 있던 정렬 기준을 select와 내부 변수에 그대로 복원한다.
+            originalPhotoOrderSnapshot = null;
+            currentSortMode = 'default';
+            const sortSelect = document.getElementById('photoSortSelect');
+            if (data.photoSortMode) {
+                currentSortMode = data.photoSortMode;
+                if (sortSelect) sortSelect.value = data.photoSortMode;
+                if (currentSortMode !== 'default') {
+                    ensureOriginalOrderSnapshot();
+                    performSort(currentSortMode);
+                }
+            } else if (sortSelect) {
+                sortSelect.value = 'default';
+            }
+
             renderPhotoSheets();
         }
 
@@ -5110,7 +5127,7 @@
         }
 
         function performSort(mode) {
-            const collator = new Intl.Collator('ko');
+            const collator = new Intl.Collator('ko', { numeric: true, sensitivity: 'base' });
 
             if (mode === 'default') {
                 if (originalPhotoOrderSnapshot) {

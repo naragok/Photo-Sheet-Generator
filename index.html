@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>토목 현장 사진대지 작성 프로그램 V4.3</title>
+    <title>토목 현장 사진대지 작성 프로그램 V4.4</title>
 
     <!-- ===== PWA: Web App Manifest & Favicons ===== -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='512' height='512' viewBox='0 0 512 512'><rect width='512' height='512' rx='100' fill='%230f172a'/><circle cx='256' cy='256' r='220' fill='%231e293b'/><path d='M256 110 C160 110 110 180 110 250 L402 250 C402 180 352 110 256 110 Z' fill='%23f59e0b'/><rect x='80' y='240' width='352' height='32' rx='10' fill='%23d97706'/><rect x='236' y='110' width='40' height='140' fill='%23fbbf24'/><path d='M160 300 H352 V410 H160 Z' fill='%23ffffff' opacity='0.9'/><path d='M180 320 L240 370 L290 335 L332 375 H180 Z' fill='%230f172a'/><circle cx='310' cy='330' r='14' fill='%23f59e0b'/></svg>">
@@ -527,7 +527,7 @@
                     <h1 class="font-black text-lg leading-tight flex items-center gap-2 text-slate-100 tracking-tight truncate">
                         토목 현장 사진대지 작성기
                         <span class="hidden md:inline text-[10px] bg-amber-500/20 text-amber-400 border border-amber-500/40 px-2 py-0.5 rounded-full font-bold tracking-wider uppercase shrink-0">Pro Ultimate</span>
-                        <span class="hidden md:inline text-[10px] bg-slate-700/60 text-slate-300 border border-slate-600/60 px-2 py-0.5 rounded-full font-bold tracking-wider shrink-0">V4.3</span>
+                        <span class="hidden md:inline text-[10px] bg-slate-700/60 text-slate-300 border border-slate-600/60 px-2 py-0.5 rounded-full font-bold tracking-wider shrink-0">V4.4</span>
                     </h1>
                     <p class="hidden sm:block text-[11px] text-slate-400 font-medium truncate">Civil Engineering Site Photo Sheet Generator</p>
                 </div>
@@ -3490,6 +3490,54 @@
             showToast(`${count}개의 빈 사진카드가 추가되었습니다.`);
         }
 
+        // 특정 카드 바로 뒤에 빈 카드를 끼워 넣는다 (사진 중간 삽입용).
+        // 정렬 기준이 '등록순'이 아니면 삽입 직후 그 기준으로 다시 정렬되어
+        // 원한 위치와 달라질 수 있으므로 사용자에게 안내한다.
+        function insertBlankPhotoAfter(afterId) {
+            saveCurrentInputValues();
+            pushUndoSnapshot();
+
+            const newPhoto = {
+                id: 'photo_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+                url: '',
+                originalUrl: '',
+                workType: lastUsedWorkType || '토공사',
+                date: '',
+                location: 'STA 0+000',
+                description: '',
+                badge: '',
+                rotation: 0,
+                extraValue: ''
+            };
+
+            const idx = photoList.findIndex(p => p.id === afterId);
+            if (idx === -1) {
+                photoList.push(newPhoto);
+            } else {
+                photoList.splice(idx + 1, 0, newPhoto);
+            }
+
+            // photoList에 이미 새 카드가 삽입된 상태이므로, 스냅샷이 없었다면
+            // ensureOriginalOrderSnapshot이 새 카드까지 포함해 올바르게 생성한다.
+            // 스냅샷이 이미 있었을 때만 새 카드를 같은 위치에 끼워 넣어준다.
+            const hadSnapshot = !!originalPhotoOrderSnapshot;
+            ensureOriginalOrderSnapshot();
+            if (hadSnapshot) {
+                const snapIdx = originalPhotoOrderSnapshot.indexOf(afterId);
+                originalPhotoOrderSnapshot.splice(snapIdx === -1 ? originalPhotoOrderSnapshot.length : snapIdx + 1, 0, newPhoto.id);
+            }
+
+            const select = document.getElementById('photoSortSelect');
+            const activeMode = select ? select.value : currentSortMode;
+            if (activeMode && activeMode !== 'default') {
+                renderPhotoSheets();
+                showToast(`새 카드가 삽입되었습니다. 현재 "${select.options[select.selectedIndex].text}" 정렬 중이라 목록 위치는 정렬 기준에 따라 달라질 수 있습니다.`);
+            } else {
+                renderPhotoSheets();
+                showToast("선택한 카드 바로 뒤에 새 카드가 삽입되었습니다.");
+            }
+        }
+
         function openBlankPageCountModal() {
             const selectEl = document.getElementById('photosPerPage');
             const photosPerPage = parseInt(selectEl ? selectEl.value : '2') || 2;
@@ -4204,6 +4252,7 @@
                                 ` : ''}
                                 <button onclick="movePhoto(${globalIndex}, -1)" title="위로 이동" class="w-6 h-6 flex items-center justify-center hover:bg-slate-700 rounded-lg text-xs"><i class="fa-solid fa-arrow-up"></i></button>
                                 <button onclick="movePhoto(${globalIndex}, 1)" title="아래로 이동" class="w-6 h-6 flex items-center justify-center hover:bg-slate-700 rounded-lg text-xs"><i class="fa-solid fa-arrow-down"></i></button>
+                                <button onclick="insertBlankPhotoAfter('${photo.id}')" title="바로 뒤에 새 카드 삽입" class="w-6 h-6 flex items-center justify-center hover:bg-teal-700 rounded-lg text-xs"><i class="fa-solid fa-square-plus"></i></button>
                                 ${siteMapUrl ? `<button onclick="openSiteMapPinModal('${photo.id}')" title="위치도에 촬영지점 표시" class="w-6 h-6 flex items-center justify-center hover:bg-emerald-700 rounded-lg text-xs ${photo.pinX !== undefined && photo.pinX !== null ? 'text-emerald-400' : ''}"><i class="fa-solid fa-location-dot"></i></button>` : ''}
                                 <button onclick="deletePhoto('${photo.id}')" title="${photo.url ? '사진 비우기 (빈 카드로 보존)' : '빈 카드 완전히 삭제'}" class="w-6 h-6 flex items-center justify-center hover:bg-rose-600 rounded-lg text-xs transition"><i class="fa-solid fa-xmark"></i></button>
                             </div>

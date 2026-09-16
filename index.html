@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>토목 현장 사진대지 작성 프로그램 V5.5</title>
+    <title>토목 현장 사진대지 작성 프로그램 V6.2</title>
 
     <!-- ===== PWA: Web App Manifest & Favicons ===== -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='512' height='512' viewBox='0 0 512 512'><rect width='512' height='512' rx='100' fill='%230f172a'/><circle cx='256' cy='256' r='220' fill='%231e293b'/><path d='M256 110 C160 110 110 180 110 250 L402 250 C402 180 352 110 256 110 Z' fill='%23f59e0b'/><rect x='80' y='240' width='352' height='32' rx='10' fill='%23d97706'/><rect x='236' y='110' width='40' height='140' fill='%23fbbf24'/><path d='M160 300 H352 V410 H160 Z' fill='%23ffffff' opacity='0.9'/><path d='M180 320 L240 370 L290 335 L332 375 H180 Z' fill='%230f172a'/><circle cx='310' cy='330' r='14' fill='%23f59e0b'/></svg>">
@@ -527,7 +527,7 @@
                     <h1 class="font-black text-lg leading-tight flex items-center gap-2 text-slate-100 tracking-tight truncate">
                         토목 현장 사진대지 작성기
                         <span class="hidden md:inline text-[10px] bg-amber-500/20 text-amber-400 border border-amber-500/40 px-2 py-0.5 rounded-full font-bold tracking-wider uppercase shrink-0">Pro Ultimate</span>
-                        <span class="hidden md:inline text-[10px] bg-slate-700/60 text-slate-300 border border-slate-600/60 px-2 py-0.5 rounded-full font-bold tracking-wider shrink-0">V5.5</span>
+                        <span class="hidden md:inline text-[10px] bg-slate-700/60 text-slate-300 border border-slate-600/60 px-2 py-0.5 rounded-full font-bold tracking-wider shrink-0">V6.2</span>
                     </h1>
                     <p class="hidden sm:block text-[11px] text-slate-400 font-medium truncate">Civil Engineering Site Photo Sheet Generator</p>
                 </div>
@@ -1131,18 +1131,19 @@
 
                         <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
                             <label class="block font-bold text-slate-800 mb-1.5 text-xs">문서 보조 인쇄 옵션</label>
+                            <p class="text-[10px] text-slate-400 mb-2">목차 · 사진 순번 · 페이지 번호는 기본적으로 표시됩니다. 인쇄에서 빼려면 체크하세요.</p>
                             <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
                                 <label class="inline-flex items-center gap-1.5 cursor-pointer text-xs text-slate-700 font-bold select-none p-1.5 rounded-lg border border-slate-100 hover:bg-slate-50">
                                     <input type="checkbox" id="showTocToggle" onchange="toggleTocDisplay(this.checked)" class="w-3.5 h-3.5 text-indigo-600 rounded border-slate-300">
-                                    목차 페이지 추가
+                                    목차 페이지 인쇄 안 함
                                 </label>
                                 <label class="inline-flex items-center gap-1.5 cursor-pointer text-xs text-slate-700 font-bold select-none p-1.5 rounded-lg border border-slate-100 hover:bg-slate-50">
                                     <input type="checkbox" id="showIndexNumberToggle" onchange="toggleIndexNumberDisplay(this.checked)" class="w-3.5 h-3.5 text-indigo-600 rounded border-slate-300">
-                                    사진 순번 표시
+                                    사진 순번 인쇄 안 함
                                 </label>
                                 <label class="inline-flex items-center gap-1.5 cursor-pointer text-xs text-slate-700 font-bold select-none p-1.5 rounded-lg border border-slate-100 hover:bg-slate-50">
                                     <input type="checkbox" id="showPageNumberToggle" onchange="togglePageNumberDisplay(this.checked)" class="w-3.5 h-3.5 text-indigo-600 rounded border-slate-300">
-                                    페이지 번호 표시
+                                    페이지 번호 인쇄 안 함
                                 </label>
                                 <label class="inline-flex items-center gap-1.5 cursor-pointer text-xs text-slate-700 font-bold select-none p-1.5 rounded-lg border border-slate-100 hover:bg-slate-50">
                                     <input type="checkbox" id="lockExportToggle" class="w-3.5 h-3.5 text-indigo-600 rounded border-slate-300">
@@ -1795,10 +1796,10 @@
         let showBadge = false;
         let showExtraField = false;
         let extraFieldLabel = "감독원";
-        let showToc = false;
+        let hideToc = false;
         let tocStyle = 'table'; // table | list | thumbnail | grouped
-        let showIndexNumber = false;
-        let showPageNumber = false;
+        let hideIndexNumber = false;
+        let hidePageNumber = false;
         let showFieldWorkType = true;
         let showFieldSubType = true;
         let showFieldDate = false;
@@ -1853,7 +1854,7 @@
             if (elExtraLabel) elExtraLabel.value = extraFieldLabel;
 
             const elShowToc = document.getElementById('showTocToggle');
-            if (elShowToc) elShowToc.checked = showToc;
+            if (elShowToc) elShowToc.checked = hideToc;
 
             const elTocStyle = document.getElementById('tocStyleSelect');
             if (elTocStyle) elTocStyle.value = tocStyle;
@@ -1871,10 +1872,10 @@
             if (elAutoSort) elAutoSort.checked = autoSortOnAddEnabled;
 
             const elShowIndex = document.getElementById('showIndexNumberToggle');
-            if (elShowIndex) elShowIndex.checked = showIndexNumber;
+            if (elShowIndex) elShowIndex.checked = hideIndexNumber;
 
             const elShowPageNum = document.getElementById('showPageNumberToggle');
-            if (elShowPageNum) elShowPageNum.checked = showPageNumber;
+            if (elShowPageNum) elShowPageNum.checked = hidePageNumber;
 
             const elFWorkType = document.getElementById('showFieldWorkType');
             if (elFWorkType) elFWorkType.checked = showFieldWorkType;
@@ -2298,10 +2299,10 @@
                 showBadge: document.getElementById('showBadgeToggle') ? document.getElementById('showBadgeToggle').checked : showBadge,
                 showExtraField: document.getElementById('showExtraFieldToggle') ? document.getElementById('showExtraFieldToggle').checked : showExtraField,
                 extraFieldLabel: document.getElementById('extraFieldLabel') ? document.getElementById('extraFieldLabel').value : extraFieldLabel,
-                showToc: document.getElementById('showTocToggle') ? document.getElementById('showTocToggle').checked : showToc,
+                hideToc: document.getElementById('showTocToggle') ? document.getElementById('showTocToggle').checked : hideToc,
                 tocStyle: document.getElementById('tocStyleSelect') ? document.getElementById('tocStyleSelect').value : tocStyle,
-                showIndexNumber: document.getElementById('showIndexNumberToggle') ? document.getElementById('showIndexNumberToggle').checked : showIndexNumber,
-                showPageNumber: document.getElementById('showPageNumberToggle') ? document.getElementById('showPageNumberToggle').checked : showPageNumber,
+                hideIndexNumber: document.getElementById('showIndexNumberToggle') ? document.getElementById('showIndexNumberToggle').checked : hideIndexNumber,
+                hidePageNumber: document.getElementById('showPageNumberToggle') ? document.getElementById('showPageNumberToggle').checked : hidePageNumber,
                 showFieldWorkType: document.getElementById('showFieldWorkType') ? document.getElementById('showFieldWorkType').checked : showFieldWorkType,
                 showFieldSubType: document.getElementById('showFieldSubType') ? document.getElementById('showFieldSubType').checked : showFieldSubType,
                 showFieldDate: document.getElementById('showFieldDate') ? document.getElementById('showFieldDate').checked : showFieldDate,
@@ -2370,21 +2371,23 @@
                 extraFieldLabel = data.extraFieldLabel || "감독원";
                 if (document.getElementById('extraFieldLabel')) document.getElementById('extraFieldLabel').value = extraFieldLabel;
             }
-            if (data.showToc !== undefined) {
-                showToc = data.showToc;
-                if (document.getElementById('showTocToggle')) document.getElementById('showTocToggle').checked = showToc;
+            // hideToc 등은 V6.2부터의 새 키(체크=인쇄 안 함). 구버전 파일은 showToc(체크=표시함)로
+            //저장되어 있어 의미가 반대이므로 별도로 변환하지 않고 각자 새 기본값(false=표시)을 따른다.
+            if (data.hideToc !== undefined) {
+                hideToc = data.hideToc;
+                if (document.getElementById('showTocToggle')) document.getElementById('showTocToggle').checked = hideToc;
             }
             if (data.tocStyle !== undefined) {
                 tocStyle = data.tocStyle || 'table';
                 if (document.getElementById('tocStyleSelect')) document.getElementById('tocStyleSelect').value = tocStyle;
             }
-            if (data.showIndexNumber !== undefined) {
-                showIndexNumber = data.showIndexNumber;
-                if (document.getElementById('showIndexNumberToggle')) document.getElementById('showIndexNumberToggle').checked = showIndexNumber;
+            if (data.hideIndexNumber !== undefined) {
+                hideIndexNumber = data.hideIndexNumber;
+                if (document.getElementById('showIndexNumberToggle')) document.getElementById('showIndexNumberToggle').checked = hideIndexNumber;
             }
-            if (data.showPageNumber !== undefined) {
-                showPageNumber = data.showPageNumber;
-                if (document.getElementById('showPageNumberToggle')) document.getElementById('showPageNumberToggle').checked = showPageNumber;
+            if (data.hidePageNumber !== undefined) {
+                hidePageNumber = data.hidePageNumber;
+                if (document.getElementById('showPageNumberToggle')) document.getElementById('showPageNumberToggle').checked = hidePageNumber;
             }
             if (data.showFieldWorkType !== undefined) {
                 showFieldWorkType = data.showFieldWorkType;
@@ -3859,8 +3862,93 @@
             photoList[index] = photoList[targetIndex];
             photoList[targetIndex] = temp;
 
+            // 드래그와 마찬가지로, 화살표로 순서를 직접 바꾸는 것도 "이 순서를 쓰겠다"는
+            // 의사표시이므로 자동 정렬 기준을 '등록순'으로 되돌려 순서가 유지되게 한다.
+            const select = document.getElementById('photoSortSelect');
+            const activeMode = select ? select.value : currentSortMode;
+            if (activeMode && activeMode !== 'default') {
+                if (select) select.value = 'default';
+                currentSortMode = 'default';
+                originalPhotoOrderSnapshot = photoList.map(p => p.id);
+            }
+
             renderPhotoSheets();
             showToast("사진 위치가 변경되었습니다.");
+        }
+
+        // 사진을 특정 순번(1부터 시작)으로 직접 이동시킨다. movePhoto()의 스왑과 달리
+        // 지정한 위치로 "끼워넣기"하며, 그 사이 카드들은 한 칸씩 밀린다.
+        function movePhotoToIndex(photoId, targetPosition1Based) {
+            saveCurrentInputValues();
+            const fromIndex = photoList.findIndex(p => p.id === photoId);
+            if (fromIndex === -1) return;
+
+            let targetIndex = targetPosition1Based - 1;
+            if (isNaN(targetIndex)) return;
+            targetIndex = Math.max(0, Math.min(photoList.length - 1, targetIndex));
+
+            if (targetIndex === fromIndex) return;
+
+            pushUndoSnapshot();
+            const [moved] = photoList.splice(fromIndex, 1);
+            photoList.splice(targetIndex, 0, moved);
+
+            // 드래그·화살표 이동과 마찬가지로, 순번을 직접 지정하는 것도 명확한 수동 조정
+            // 의사표시이므로 자동 정렬 기준을 '등록순'으로 되돌려 이 순서가 유지되게 한다.
+            const select = document.getElementById('photoSortSelect');
+            const activeMode = select ? select.value : currentSortMode;
+            if (activeMode && activeMode !== 'default') {
+                if (select) select.value = 'default';
+                currentSortMode = 'default';
+                originalPhotoOrderSnapshot = photoList.map(p => p.id);
+            }
+
+            renderPhotoSheets();
+            showToast(`${targetIndex + 1}번 위치로 이동했습니다.`);
+        }
+
+        // "번호 입력해서 이동" 버튼: 작은 입력 모달을 띄워 목표 순번을 받는다.
+        function promptMoveToIndex(photoId, currentIndex0Based) {
+            window.__moveToIndexPhotoId = photoId;
+            let modal = document.getElementById('moveToIndexModal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'moveToIndexModal';
+                modal.className = 'fixed inset-0 bg-slate-950/70 z-[70] flex items-center justify-center backdrop-blur-sm no-print p-4';
+                modal.innerHTML = `
+                    <div class="bg-white rounded-2xl shadow-2xl max-w-xs w-full p-5">
+                        <div class="flex items-center justify-between mb-3">
+                            <p class="text-sm font-extrabold text-slate-800">몇 번째 위치로 옮길까요?</p>
+                            <button onclick="document.getElementById('moveToIndexModal').remove()" class="w-6 h-6 flex items-center justify-center text-slate-400 hover:text-rose-600"><i class="fa-solid fa-xmark"></i></button>
+                        </div>
+                        <p id="moveToIndexCurrentText" class="text-xs text-slate-500 mb-2"></p>
+                        <input type="number" id="moveToIndexInput" min="1" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-500/50 mb-3" placeholder="이동할 순번 입력">
+                        <button onclick="confirmMoveToIndex()" class="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow transition">이동</button>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+            }
+            document.getElementById('moveToIndexCurrentText').innerText = `현재 ${currentIndex0Based + 1}번째 위치입니다. (전체 ${photoList.length}장)`;
+            const input = document.getElementById('moveToIndexInput');
+            input.max = photoList.length;
+            input.value = currentIndex0Based + 1;
+            input.onkeydown = (e) => { if (e.key === 'Enter') confirmMoveToIndex(); };
+            setTimeout(() => { input.focus(); input.select(); }, 50);
+        }
+
+        function confirmMoveToIndex() {
+            const photoId = window.__moveToIndexPhotoId;
+            const input = document.getElementById('moveToIndexInput');
+            const modal = document.getElementById('moveToIndexModal');
+            if (!input || !photoId) { if (modal) modal.remove(); return; }
+
+            const target = parseInt(input.value, 10);
+            if (modal) modal.remove();
+            if (isNaN(target) || target < 1) {
+                showToast("올바른 순번을 입력해 주세요.");
+                return;
+            }
+            movePhotoToIndex(photoId, target);
         }
 
         function buildInfoColgroup() {
@@ -3898,7 +3986,6 @@
             const workTypeCell = {
                 visible: showFieldWorkType,
                 label: `<th style="width: ${workTypeLabelW}%;" class="bg-slate-100 text-center font-bold relative whitespace-nowrap">
-                            ${(!isEmpty && showIndexNumber) ? `<span class="photo-index-badge absolute -top-1 -left-1 bg-slate-900 text-white text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center leading-none">${globalIndex + 1}</span>` : ''}
                             공 종
                         </th>`,
                 value: isEmpty
@@ -4463,9 +4550,9 @@
             const badgeCheckbox = document.getElementById('showBadgeToggle');
             if (badgeCheckbox) showBadge = badgeCheckbox.checked;
             const indexNumberCheckbox = document.getElementById('showIndexNumberToggle');
-            if (indexNumberCheckbox) showIndexNumber = indexNumberCheckbox.checked;
+            if (indexNumberCheckbox) hideIndexNumber = indexNumberCheckbox.checked;
             const pageNumberCheckbox = document.getElementById('showPageNumberToggle');
-            if (pageNumberCheckbox) showPageNumber = pageNumberCheckbox.checked;
+            if (pageNumberCheckbox) hidePageNumber = pageNumberCheckbox.checked;
 
             const fWorkType = document.getElementById('showFieldWorkType');
             const fDate = document.getElementById('showFieldDate');
@@ -4588,6 +4675,8 @@
                     pageHTML += `
                         <div onclick="lastFocusedPhotoId='${photo.id}'" class="photo-card-block border-2 border-black p-1.5 bg-white flex flex-col justify-between flex-1 min-h-0 relative group overflow-hidden ${filterActive && !isMatch ? 'hidden no-print' : ''} ${selectionMode && selectedPhotoIds.has(photo.id) ? 'ring-4 ring-blue-500' : ''} ${duplicateIds.has(photo.id) ? 'ring-2 ring-rose-500' : (incompleteIds.has(photo.id) ? 'ring-2 ring-amber-400' : '')}" data-id="${photo.id}" data-index="${globalIndex}">
 
+                            ${!hideIndexNumber ? `<span class="photo-index-badge absolute -top-1 -left-1 z-20 bg-slate-900 text-white text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center leading-none">${globalIndex + 1}</span>` : ''}
+
                             ${duplicateIds.has(photo.id) ? `
                             <div class="no-print absolute bottom-2 left-2 z-20 bg-rose-600 text-white text-[10px] font-black px-2 py-1 rounded-lg shadow-lg flex items-center gap-1" title="동일한 사진이 다른 카드에도 등록되어 있습니다">
                                 <i class="fa-solid fa-triangle-exclamation"></i> 중복
@@ -4626,6 +4715,8 @@
                                 <button onclick="rotatePhoto('${photo.id}', -90)" title="좌회전" class="w-6 h-6 flex items-center justify-center hover:bg-slate-700 rounded-lg text-xs"><i class="fa-solid fa-rotate-left"></i></button>
                                 <button onclick="rotatePhoto('${photo.id}', 90)" title="우회전" class="w-6 h-6 flex items-center justify-center hover:bg-slate-700 rounded-lg text-xs"><i class="fa-solid fa-rotate-right"></i></button>
                                 ` : ''}
+                                <span class="drag-handle w-6 h-6 flex items-center justify-center text-slate-400 hover:text-white cursor-grab active:cursor-grabbing" title="드래그하여 순서 이동"><i class="fa-solid fa-grip-vertical text-xs"></i></span>
+                                <button onclick="promptMoveToIndex('${photo.id}', ${globalIndex})" title="번호 입력해서 이동 (현재 ${globalIndex + 1}번)" class="w-6 h-6 flex items-center justify-center hover:bg-indigo-700 rounded-lg text-xs"><i class="fa-solid fa-arrow-right-arrow-left"></i></button>
                                 <button onclick="movePhoto(${globalIndex}, -1)" title="위로 이동" class="w-6 h-6 flex items-center justify-center hover:bg-slate-700 rounded-lg text-xs"><i class="fa-solid fa-arrow-up"></i></button>
                                 <button onclick="movePhoto(${globalIndex}, 1)" title="아래로 이동" class="w-6 h-6 flex items-center justify-center hover:bg-slate-700 rounded-lg text-xs"><i class="fa-solid fa-arrow-down"></i></button>
                                 <button onclick="insertBlankPhotoAfter('${photo.id}')" title="바로 뒤에 새 카드 삽입" class="w-6 h-6 flex items-center justify-center hover:bg-teal-700 rounded-lg text-xs"><i class="fa-solid fa-square-plus"></i></button>
@@ -4689,7 +4780,7 @@
                 pageHTML += `
                         </div>
                     </div>
-                    ${showPageNumber ? `
+                    ${!hidePageNumber ? `
                     <div class="text-center text-xs font-bold text-slate-800 pt-1 border-t border-slate-300 shrink-0">
                         - ${pageIdx + 1} / ${totalPages} -
                     </div>
@@ -4704,6 +4795,11 @@
                     new Sortable(pageGroupEl, {
                         animation: 150,
                         ghostClass: 'opacity-40',
+                        group: 'photoPages', // 모든 페이지가 같은 그룹을 공유해, 페이지 경계를 넘어 드래그로 옮길 수 있다.
+                        handle: '.drag-handle', // 이 손잡이 아이콘에서만 드래그가 시작되어, 입력칸을 스치는 실수 터치로는 드래그되지 않는다.
+                        scroll: true, // 카드를 화면 가장자리 쪽으로 끌면 자동으로 스크롤되어 화면 밖 페이지까지 옮길 수 있다.
+                        scrollSensitivity: 100, // 가장자리로부터 이 거리(px) 안에 들어오면 스크롤 시작
+                        scrollSpeed: 12,
                         onEnd: function () {
                             reorderPhotosFromDOM();
                         }
@@ -4724,8 +4820,8 @@
             }
 
             const tocCheckbox = document.getElementById('showTocToggle');
-            if (tocCheckbox) showToc = tocCheckbox.checked;
-            if (showToc) {
+            if (tocCheckbox) hideToc = tocCheckbox.checked;
+            if (!hideToc) {
                 const tocDiv = buildTocPage();
                 photoSheetsContainer.insertBefore(tocDiv, photoSheetsContainer.firstChild);
             }
@@ -5069,12 +5165,12 @@
 
         function updateTocStyle(value) {
             tocStyle = value || 'table';
-            if (showToc) renderPhotoSheets();
+            if (!hideToc) renderPhotoSheets();
             scheduleAutoSave();
         }
 
         function toggleTocDisplay(checked) {
-            showToc = checked;
+            hideToc = checked;
             renderPhotoSheets();
         }
 
@@ -5082,11 +5178,11 @@
             completionMode = checked;
             if (completionMode) {
                 // 준공모드 진입 시 목차/그룹형 TOC를 기본으로 켜준다 (요청 시 언제든 변경 가능)
-                showToc = true;
+                hideToc = false;
                 tocStyle = 'grouped';
                 const tocToggleEl = document.getElementById('showTocToggle');
                 const tocStyleEl = document.getElementById('tocStyleSelect');
-                if (tocToggleEl) tocToggleEl.checked = true;
+                if (tocToggleEl) tocToggleEl.checked = false;
                 if (tocStyleEl) tocStyleEl.value = 'grouped';
                 showToast("준공모드가 켜졌습니다. (3단 비교 카드, 그룹 목차 자동 적용)");
             } else {
@@ -5412,13 +5508,13 @@
         }
 
         function toggleIndexNumberDisplay(checked) {
-            showIndexNumber = checked;
+            hideIndexNumber = checked;
             renderPhotoSheets();
         }
 
         function togglePageNumberDisplay(checked) {
             saveCurrentInputValues();
-            showPageNumber = checked;
+            hidePageNumber = checked;
             renderPhotoSheets();
         }
 
@@ -5681,7 +5777,7 @@
                 return `
                     <div class="sort-priority-item flex items-center gap-2 p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs cursor-grab active:cursor-grabbing" data-key="${key}">
                         <i class="fa-solid fa-grip-vertical text-slate-300 shrink-0"></i>
-                        <span class="w-5 h-5 flex items-center justify-center bg-indigo-600 text-white font-black rounded-full text-[10px] shrink-0">${idx + 1}</span>
+                        <span class="w-5 h-5 flex items-center justify-center bg-indigo-600 text-white font-black rounded-full text-[10px] shrink-0 sort-priority-index">${idx + 1}</span>
                         <i class="fa-solid ${meta.icon} ${meta.color} w-4 text-center shrink-0"></i>
                         <span class="font-bold text-slate-700 flex-1">${meta.label}</span>
                     </div>
@@ -5691,11 +5787,16 @@
             if (!listEl.dataset.sortableInit) {
                 new Sortable(listEl, {
                     animation: 150,
-                    handle: '.sort-priority-item',
                     onEnd: () => {
                         const newOrder = Array.from(listEl.querySelectorAll('.sort-priority-item')).map(el => el.dataset.key);
                         sortPriorityOrder = newOrder;
-                        renderSortPriorityList(); // 순번 배지(1,2,3) 갱신
+                        // 순번 배지(1,2,3)만 즉시 갱신한다. innerHTML을 통째로 재작성하면
+                        // 드래그 직후 SortableJS가 옮겨놓은 DOM 노드가 통째로 교체되어
+                        // 다음 드래그 동작이 불안정해질 수 있으므로 배지 텍스트만 수정한다.
+                        listEl.querySelectorAll('.sort-priority-item').forEach((el, idx) => {
+                            const badge = el.querySelector('.sort-priority-index');
+                            if (badge) badge.textContent = idx + 1;
+                        });
                         scheduleAutoSave();
                         if (currentSortMode === 'workTypeOrder' || (document.getElementById('photoSortSelect') && document.getElementById('photoSortSelect').value === 'workTypeOrder')) {
                             sortPhotos('workTypeOrder');
@@ -6133,6 +6234,20 @@
             if(newOrderIds.length === photoList.length) {
                 pushUndoSnapshot();
                 photoList.sort((a, b) => newOrderIds.indexOf(a.id) - newOrderIds.indexOf(b.id));
+
+                // "공종 지정순서" 등 자동 정렬 모드에서 드래그로 순서를 바꾸면, 다음에 사진을
+                // 추가할 때 그 정렬 기준이 다시 적용되어 방금 옮긴 순서가 사라져버린다.
+                // 드래그는 "이 순서를 직접 쓰겠다"는 명확한 의사표시이므로, 정렬 기준을
+                // '등록순'으로 되돌려 지금 만든 순서가 계속 유지되도록 한다.
+                const select = document.getElementById('photoSortSelect');
+                const activeMode = select ? select.value : currentSortMode;
+                if (activeMode && activeMode !== 'default') {
+                    if (select) select.value = 'default';
+                    currentSortMode = 'default';
+                    originalPhotoOrderSnapshot = photoList.map(p => p.id);
+                    showToast("사진 순서를 직접 옮겨서 정렬 기준이 '등록순'으로 바뀌었습니다.");
+                }
+
                 renderPhotoSheets();
             }
         }
@@ -7177,7 +7292,7 @@
             }
 
             // 2. Export Table of Contents (TOC) Sheet if enabled
-            if (showToc) {
+            if (!hideToc) {
                 const tocSheet = workbook.addWorksheet('목차', { pageSetup: commonPageSetup });
                 tocSheet.views = [{ showGridLines: true }];
                 tocSheet.columns = [
@@ -7231,7 +7346,7 @@
 
             // 3. Export Main Photo Sheet Pages
             const sheetSetup = { ...commonPageSetup };
-            if (showPageNumber) {
+            if (!hidePageNumber) {
                 sheetSetup.headerFooter = {
                     firstHeader: '',
                     firstFooter: '',

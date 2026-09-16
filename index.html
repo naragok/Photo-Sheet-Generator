@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>토목 현장 사진대지 작성 프로그램 V5.2</title>
+    <title>토목 현장 사진대지 작성 프로그램 V5.5</title>
 
     <!-- ===== PWA: Web App Manifest & Favicons ===== -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='512' height='512' viewBox='0 0 512 512'><rect width='512' height='512' rx='100' fill='%230f172a'/><circle cx='256' cy='256' r='220' fill='%231e293b'/><path d='M256 110 C160 110 110 180 110 250 L402 250 C402 180 352 110 256 110 Z' fill='%23f59e0b'/><rect x='80' y='240' width='352' height='32' rx='10' fill='%23d97706'/><rect x='236' y='110' width='40' height='140' fill='%23fbbf24'/><path d='M160 300 H352 V410 H160 Z' fill='%23ffffff' opacity='0.9'/><path d='M180 320 L240 370 L290 335 L332 375 H180 Z' fill='%230f172a'/><circle cx='310' cy='330' r='14' fill='%23f59e0b'/></svg>">
@@ -527,7 +527,7 @@
                     <h1 class="font-black text-lg leading-tight flex items-center gap-2 text-slate-100 tracking-tight truncate">
                         토목 현장 사진대지 작성기
                         <span class="hidden md:inline text-[10px] bg-amber-500/20 text-amber-400 border border-amber-500/40 px-2 py-0.5 rounded-full font-bold tracking-wider uppercase shrink-0">Pro Ultimate</span>
-                        <span class="hidden md:inline text-[10px] bg-slate-700/60 text-slate-300 border border-slate-600/60 px-2 py-0.5 rounded-full font-bold tracking-wider shrink-0">V5.2</span>
+                        <span class="hidden md:inline text-[10px] bg-slate-700/60 text-slate-300 border border-slate-600/60 px-2 py-0.5 rounded-full font-bold tracking-wider shrink-0">V5.5</span>
                     </h1>
                     <p class="hidden sm:block text-[11px] text-slate-400 font-medium truncate">Civil Engineering Site Photo Sheet Generator</p>
                 </div>
@@ -899,13 +899,17 @@
                             <div class="bg-white p-2.5 rounded-xl border border-slate-200 shadow-sm">
                                 <div class="flex items-center justify-between mb-1">
                                     <label class="font-bold text-slate-700">표지 디자인</label>
-                                    <span class="text-[10px] text-teal-500 font-semibold">4가지 스타일</span>
+                                    <span class="text-[10px] text-teal-500 font-semibold">8가지 스타일</span>
                                 </div>
                                 <select id="coverStyleSelect" onchange="updateCoverStyle(this.value)" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg outline-none font-bold text-slate-700 bg-slate-50/50 focus:bg-white text-xs cursor-pointer">
                                     <option value="classic" selected>① 클래식형 (테두리 박스 + 정보표)</option>
                                     <option value="minimal">② 모던 미니멀형 (여백 강조, 심플)</option>
                                     <option value="blueprint">③ 청사진(설계도)형 (짙은 헤더 + 격자무늬)</option>
                                     <option value="colorband">④ 컬러 밴드형 (좌측 그라데이션 바)</option>
+                                    <option value="official">⑤ 스탬프·공문서형 (결재란 + 직인, 관공서 제출용)</option>
+                                    <option value="infographic">⑥ 인포그래픽형 (총 사진·공종·촬영일수 숫자 강조)</option>
+                                    <option value="ribbon">⑦ 리본형 (대각선 타이틀 리본)</option>
+                                    <option value="lineart">⑧ 심플 라인아트형 (얇은 실선, 극도로 미니멀)</option>
                                 </select>
                             </div>
 
@@ -1117,6 +1121,15 @@
                         </div>
 
                         <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
+                            <div class="flex items-center justify-between mb-1.5">
+                                <label class="font-bold text-slate-800 text-xs">"공종 지정순서" 세부 우선순위</label>
+                                <span class="text-[10px] text-indigo-500 font-semibold">드래그로 순서 변경</span>
+                            </div>
+                            <p class="text-[10px] text-slate-400 mb-2">공종 → 세부항목까지 정렬한 뒤, 그 안에서 어떤 기준을 먼저 볼지 순서를 정합니다.</p>
+                            <div id="sortPriorityList" class="space-y-1.5"></div>
+                        </div>
+
+                        <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
                             <label class="block font-bold text-slate-800 mb-1.5 text-xs">문서 보조 인쇄 옵션</label>
                             <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
                                 <label class="inline-flex items-center gap-1.5 cursor-pointer text-xs text-slate-700 font-bold select-none p-1.5 rounded-lg border border-slate-100 hover:bg-slate-50">
@@ -1140,13 +1153,17 @@
                             <div class="mt-2.5 pt-2.5 border-t border-slate-100">
                                 <label class="flex items-center justify-between mb-1">
                                     <span class="font-bold text-slate-700 text-[11px]">목차 표시 종류</span>
-                                    <span class="text-[10px] text-indigo-500 font-semibold">4가지 스타일</span>
+                                    <span class="text-[10px] text-indigo-500 font-semibold">8가지 스타일</span>
                                 </label>
                                 <select id="tocStyleSelect" onchange="updateTocStyle(this.value)" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg outline-none font-bold text-slate-700 bg-slate-50/50 focus:bg-white text-xs cursor-pointer">
                                     <option value="table" selected>① 표 형식 (기본, 상세 정보 포함)</option>
                                     <option value="list">② 간결 리스트형 (2단 요약)</option>
                                     <option value="thumbnail">③ 썸네일 카드형 (사진 미리보기)</option>
                                     <option value="grouped">④ 공종별 그룹형 (공종으로 묶어서 정리)</option>
+                                    <option value="timeline">⑤ 타임라인형 (날짜 흐름을 세로 타임라인으로)</option>
+                                    <option value="minigrid">⑥ 미니멀 그리드형 (촘촘한 4열, 매수 많을 때)</option>
+                                    <option value="checklist">⑦ 체크리스트형 (확인용 체크박스 목록)</option>
+                                    <option value="magazine">⑧ 매거진형 (큰 썸네일 + 캡션, 3열)</option>
                                 </select>
                                 <p class="text-[10px] text-slate-400 mt-1">💡 '목차 페이지 추가'를 켠 상태에서 원하는 표시 방식을 선택하세요.</p>
                             </div>
@@ -1936,6 +1953,8 @@
 
             const elCoverYM = document.getElementById('coverYearMonthInput');
             if (elCoverYM) elCoverYM.value = coverYearMonth;
+
+            renderSortPriorityList();
         }
 
         function switchSettingsTab(tabName) {
@@ -2320,6 +2339,7 @@
                 coverDate: coverDate,
                 coverYearMonth: coverYearMonth,
                 photoSortMode: document.getElementById('photoSortSelect') ? document.getElementById('photoSortSelect').value : currentSortMode,
+                sortPriorityOrder: sortPriorityOrder,
                 photoList: photoList
             };
         }
@@ -2487,6 +2507,17 @@
             if (data.coverYearMonth !== undefined && document.getElementById('coverYearMonthInput')) document.getElementById('coverYearMonthInput').value = data.coverYearMonth;
 
             photoList = data.photoList || [];
+
+            // "공종 지정순서" 정렬에서 위치/내용/태그를 비교하는 순서. 유효하지 않은 값이 섞여
+            // 있으면(구버전 파일 등) 기본 순서로 되돌린다.
+            const validKeys = ['location', 'description', 'badge'];
+            if (Array.isArray(data.sortPriorityOrder) &&
+                data.sortPriorityOrder.length === 3 &&
+                validKeys.every(k => data.sortPriorityOrder.includes(k))) {
+                sortPriorityOrder = data.sortPriorityOrder;
+            } else {
+                sortPriorityOrder = ['location', 'description', 'badge'];
+            }
 
             // 저장 당시 선택돼 있던 정렬 기준을 select와 내부 변수에 그대로 복원한다.
             originalPhotoOrderSnapshot = null;
@@ -4212,6 +4243,121 @@
             `;
         }
 
+        // ⑤ 스탬프/공문서형: 문서번호 헤더 + 상단 결재란 강조 + 하단 직인/발신처, 관공서 제출용 느낌
+        function buildCoverBodyOfficial(fields, yearMonthStr) {
+            const today = new Date();
+            const docNo = `제 ${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}${String(today.getDate()).padStart(2, '0')} 호`;
+            return `
+                <div class="w-full flex-1 flex flex-col p-8 box-border border-2 border-slate-900">
+                    <div class="flex justify-between items-start text-[10px] font-bold text-slate-500 pb-3 border-b border-slate-300">
+                        <span>${escapeHtml(docNo)}</span>
+                        <span>CONFIDENTIAL · 관 공 서 제 출 용</span>
+                    </div>
+
+                    ${buildApprovalBoxHTML()}
+
+                    <div class="flex-1 flex flex-col items-center justify-center text-center py-4">
+                        <p class="text-xs font-bold text-slate-400 tracking-[0.3em] mb-3">SITE PHOTO SHEET · 공 문 서</p>
+                        <h1 class="text-3xl md:text-4xl font-black text-slate-900 tracking-tight leading-tight border-t-2 border-b-2 border-slate-900 py-4 px-6">
+                            ${escapeHtml(coverMainTitle || '공 사 현 장 사 진 대 지')}
+                        </h1>
+                        <p class="text-base font-bold text-slate-700 mt-5 truncate px-4">${escapeHtml(siteName)}</p>
+                        ${yearMonthStr ? `<p class="text-lg font-black text-slate-900 tracking-[0.2em] mt-4">${escapeHtml(yearMonthStr)}</p>` : ''}
+                    </div>
+
+                    ${buildCoverInfoTable(fields, 'classic')}
+
+                    <div class="flex justify-between items-end pt-3 border-t border-slate-300 text-[10px] font-bold text-slate-500">
+                        <span>위와 같이 공사 현장 사진을 제출합니다.</span>
+                        <span class="relative inline-flex items-center justify-center w-16 h-16 rounded-full border-2 border-rose-600 text-rose-600 font-black text-[11px] rotate-[-8deg] shrink-0">
+                            직 인
+                        </span>
+                    </div>
+                </div>
+            `;
+        }
+
+        // ⑥ 인포그래픽형: 총 사진 매수·공종 종류 수 등을 큼직한 숫자로 강조
+        function buildCoverBodyInfographic(fields, yearMonthStr) {
+            const totalPhotos = photoList.length;
+            const workTypeSet = new Set(photoList.map(p => (p.workType || '').trim()).filter(Boolean));
+            const totalWorkTypes = workTypeSet.size;
+            const dateSet = new Set(photoList.map(p => p.date).filter(Boolean));
+            const totalDates = dateSet.size;
+
+            const statCard = (num, label, colorClass) => `
+                <div class="flex-1 flex flex-col items-center justify-center py-3 border-r border-slate-200 last:border-r-0">
+                    <span class="text-3xl font-black ${colorClass}">${num}</span>
+                    <span class="text-[10px] font-bold text-slate-500 mt-1 tracking-wide">${label}</span>
+                </div>
+            `;
+
+            return `
+                <div class="w-full flex-1 flex flex-col p-8 box-border">
+                    <div class="flex justify-between items-center text-[10px] font-bold tracking-widest text-slate-400 uppercase">
+                        <span>Site Photo Report</span>
+                        <span>Confidential</span>
+                    </div>
+                    <div class="flex-1 flex flex-col justify-center">
+                        <h1 class="text-3xl md:text-4xl font-black text-slate-900 tracking-tight leading-tight mb-3">
+                            ${escapeHtml(coverMainTitle || '공 사 현 장 사 진 대 지')}
+                        </h1>
+                        <p class="text-base font-bold text-slate-600 mb-1 truncate">${escapeHtml(siteName)}</p>
+                        ${yearMonthStr ? `<p class="text-lg font-black text-amber-600 tracking-[0.2em] mt-2 mb-6">${escapeHtml(yearMonthStr)}</p>` : ''}
+
+                        <div class="flex border border-slate-200 rounded-xl overflow-hidden bg-slate-50/50 mb-6">
+                            ${statCard(totalPhotos, '총 사진 매수', 'text-amber-600')}
+                            ${statCard(totalWorkTypes, '공종 구분', 'text-slate-800')}
+                            ${statCard(totalDates, '촬영 일수', 'text-slate-800')}
+                        </div>
+                    </div>
+                    ${buildCoverInfoTable(fields, 'classic')}
+                </div>
+            `;
+        }
+
+        // ⑦ 리본형: 우측 상단에서 대각선으로 걸린 타이틀 리본 + 심플한 하단 정보
+        function buildCoverBodyRibbon(fields, yearMonthStr) {
+            return `
+                <div class="w-full flex-1 flex flex-col p-8 box-border relative overflow-hidden border border-slate-200">
+                    <div class="absolute -right-16 top-9 w-64 bg-slate-900 text-white text-center py-1.5 text-[11px] font-black tracking-[0.3em] rotate-45 shadow-lg">
+                        OFFICIAL RECORD
+                    </div>
+                    <div class="flex justify-start items-center text-[10px] font-bold tracking-widest text-slate-400 uppercase">
+                        <span>Site Photo Sheet</span>
+                    </div>
+                    <div class="flex-1 flex flex-col justify-center max-w-[80%]">
+                        <div class="w-12 h-1.5 bg-amber-500 rounded-full mb-5"></div>
+                        <h1 class="text-3xl md:text-4xl font-black text-slate-900 tracking-tight leading-tight mb-3">
+                            ${escapeHtml(coverMainTitle || '공 사 현 장 사 진 대 지')}
+                        </h1>
+                        <p class="text-base font-bold text-slate-600 mb-1 truncate">${escapeHtml(siteName)}</p>
+                        ${yearMonthStr ? `<p class="text-lg font-black text-slate-900 tracking-[0.2em] mt-4">${escapeHtml(yearMonthStr)}</p>` : ''}
+                    </div>
+                    ${buildCoverInfoTable(fields, 'classic')}
+                </div>
+            `;
+        }
+
+        // ⑧ 심플 라인아트형: 장식을 최소화하고 얇은 실선 프레임과 좁은 자간의 타이포만으로 구성
+        function buildCoverBodyLineArt(fields, yearMonthStr) {
+            return `
+                <div class="w-full flex-1 flex flex-col p-10 box-border border border-slate-300">
+                    <div class="flex-1 flex flex-col items-center justify-center text-center">
+                        <p class="text-[10px] font-bold text-slate-400 tracking-[0.4em] mb-8">SITE PHOTOGRAPHIC RECORD</p>
+                        <div class="w-full max-w-xs border-t border-b border-slate-300 py-6 mb-8">
+                            <h1 class="text-2xl md:text-3xl font-light text-slate-900 tracking-[0.15em] leading-relaxed">
+                                ${escapeHtml(coverMainTitle || '공 사 현 장 사 진 대 지')}
+                            </h1>
+                        </div>
+                        <p class="text-sm font-medium text-slate-500 tracking-widest mb-1 truncate">${escapeHtml(siteName)}</p>
+                        ${yearMonthStr ? `<p class="text-xs font-bold text-slate-400 tracking-[0.3em] mt-2">${escapeHtml(yearMonthStr)}</p>` : ''}
+                    </div>
+                    ${buildCoverInfoListMinimal(fields)}
+                </div>
+            `;
+        }
+
         function buildCoverPageHTML() {
             const coverDiv = document.createElement('div');
             coverDiv.className = 'a4-preview-page a4-page flex flex-col justify-between border border-slate-200 overflow-hidden bg-white';
@@ -4229,6 +4375,18 @@
                     break;
                 case 'colorband':
                     bodyHTML = buildCoverBodyColorBand(fields, yearMonthStr);
+                    break;
+                case 'official':
+                    bodyHTML = buildCoverBodyOfficial(fields, yearMonthStr);
+                    break;
+                case 'infographic':
+                    bodyHTML = buildCoverBodyInfographic(fields, yearMonthStr);
+                    break;
+                case 'ribbon':
+                    bodyHTML = buildCoverBodyRibbon(fields, yearMonthStr);
+                    break;
+                case 'lineart':
+                    bodyHTML = buildCoverBodyLineArt(fields, yearMonthStr);
                     break;
                 case 'classic':
                 default:
@@ -4774,6 +4932,98 @@
             return groupsHTML;
         }
 
+        // ⑤ 타임라인형: 날짜순으로 세로 타임라인을 그려, 날짜가 바뀔 때마다 구분점을 찍고
+        // 그 아래 해당 날짜에 촬영된 사진들을 공종/위치와 함께 나열한다.
+        function buildTocBodyTimeline() {
+            // 날짜가 있는 사진과 없는 사진을 나눠서, 날짜순(오름차순) → 원래 등록순으로 정렬한다.
+            const indexed = photoList.map((photo, idx) => ({ photo, idx }));
+            indexed.sort((a, b) => {
+                const dateA = a.photo.date || '';
+                const dateB = b.photo.date || '';
+                if (dateA && dateB && dateA !== dateB) return dateA < dateB ? -1 : 1;
+                if (dateA && !dateB) return -1;
+                if (!dateA && dateB) return 1;
+                return a.idx - b.idx;
+            });
+
+            let lastDate = null;
+            const items = indexed.map(({ photo, idx }) => {
+                const dateLabel = photo.date || '날짜 미지정';
+                const isNewDate = dateLabel !== lastDate;
+                lastDate = dateLabel;
+
+                const dateMarkerHTML = isNewDate ? `
+                    <div class="flex items-center gap-2 mt-2.5 mb-1 first:mt-0 break-inside-avoid">
+                        <span class="w-2.5 h-2.5 rounded-full bg-slate-900 shrink-0"></span>
+                        <span class="text-[11px] font-black text-slate-900">${escapeHtml(dateLabel)}</span>
+                        <span class="flex-1 h-px bg-slate-300"></span>
+                    </div>
+                ` : '';
+
+                return `
+                    ${dateMarkerHTML}
+                    <div class="flex items-start gap-2 pl-[15px] border-l-2 border-slate-200 pb-1.5 text-[10px] break-inside-avoid">
+                        <span class="font-black text-slate-400 w-5 shrink-0 -ml-[1px]">${idx + 1}</span>
+                        <span class="font-bold text-slate-800 shrink-0">${escapeHtml(photo.workType || '-')}</span>
+                        ${photo.subType ? `<span class="text-slate-400 shrink-0">· ${escapeHtml(photo.subType)}</span>` : ''}
+                        <span class="text-slate-300 shrink-0">|</span>
+                        <span class="text-slate-600 truncate flex-1">${escapeHtml(photo.location || '-')}</span>
+                    </div>
+                `;
+            }).join('');
+
+            return `<div class="text-black" style="column-count:2; column-gap: 20px;">${items}</div>`;
+        }
+
+        // ⑥ 미니멀 그리드형: 촘촘한 다열 그리드에 순번/공종/위치만 압축 표시, 매수가 많을 때 유리
+        function buildTocBodyMiniGrid() {
+            const cells = photoList.map((photo, idx) => `
+                <div class="border border-slate-200 rounded px-1.5 py-1 text-[9px] leading-tight break-inside-avoid bg-white">
+                    <div class="flex items-center gap-1">
+                        <span class="font-black text-slate-400">${idx + 1}</span>
+                        <span class="font-bold text-slate-800 truncate">${escapeHtml(photo.workType || '-')}</span>
+                    </div>
+                    <div class="text-slate-500 truncate">${escapeHtml(photo.location || '-')}</div>
+                </div>
+            `).join('');
+
+            return `<div class="grid grid-cols-4 gap-1.5">${cells}</div>`;
+        }
+
+        // ⑦ 체크리스트형: 각 항목 앞에 체크박스 모양을 두어 준공검사·확인용 목록처럼 표시
+        function buildTocBodyChecklist() {
+            const rows = photoList.map((photo, idx) => `
+                <div class="flex items-center gap-2 text-[10px] border-b border-dotted border-slate-300 py-1 break-inside-avoid">
+                    <span class="w-3 h-3 border-2 border-slate-400 rounded-sm shrink-0"></span>
+                    <span class="font-black text-slate-400 w-5 shrink-0">${idx + 1}</span>
+                    <span class="font-bold text-slate-800 shrink-0">${escapeHtml(photo.workType || '-')}</span>
+                    ${photo.subType ? `<span class="text-slate-400 shrink-0">(${escapeHtml(photo.subType)})</span>` : ''}
+                    <span class="text-slate-600 truncate flex-1">${escapeHtml(photo.location || '-')}</span>
+                    <span class="text-slate-400 shrink-0">${escapeHtml(photo.date || '-')}</span>
+                </div>
+            `).join('');
+
+            return `<div class="text-black" style="column-count:2; column-gap: 18px;">${rows}</div>`;
+        }
+
+        // ⑧ 매거진형: 사진을 크게 보여주고 아래 캡션(공종/위치)을 곁들여 잡지 화보처럼 구성
+        function buildTocBodyMagazine() {
+            const cards = photoList.map((photo, idx) => `
+                <div class="border border-slate-300 rounded-lg overflow-hidden flex flex-col break-inside-avoid bg-white shadow-sm">
+                    <div class="w-full aspect-[4/3] bg-slate-100 overflow-hidden flex items-center justify-center relative">
+                        ${photo.url ? `<img src="${photo.url}" class="w-full h-full object-cover">` : `<span class="text-slate-300 text-[9px] font-bold">사진 없음</span>`}
+                        <span class="absolute top-1 left-1 bg-slate-900/80 text-white text-[9px] font-black w-5 h-5 rounded-full flex items-center justify-center">${idx + 1}</span>
+                    </div>
+                    <div class="px-1.5 py-1 text-[9px] leading-tight">
+                        <div class="font-black text-slate-900 truncate">${escapeHtml(photo.workType || '-')}${photo.subType ? ` · ${escapeHtml(photo.subType)}` : ''}</div>
+                        <div class="text-slate-500 truncate">${escapeHtml(photo.location || '-')}</div>
+                    </div>
+                </div>
+            `).join('');
+
+            return `<div class="grid grid-cols-3 gap-2.5">${cards}</div>`;
+        }
+
         function buildTocPage() {
             const tocDiv = document.createElement('div');
             tocDiv.className = 'a4-preview-page a4-page flex flex-col border border-slate-200 overflow-hidden';
@@ -4788,6 +5038,18 @@
                     break;
                 case 'grouped':
                     bodyHTML = buildTocBodyGrouped();
+                    break;
+                case 'timeline':
+                    bodyHTML = buildTocBodyTimeline();
+                    break;
+                case 'minigrid':
+                    bodyHTML = buildTocBodyMiniGrid();
+                    break;
+                case 'checklist':
+                    bodyHTML = buildTocBodyChecklist();
+                    break;
+                case 'magazine':
+                    bodyHTML = buildTocBodyMagazine();
                     break;
                 case 'table':
                 default:
@@ -5372,6 +5634,9 @@
 
         let originalPhotoOrderSnapshot = null;
         let currentSortMode = 'default';
+        // "공종 지정순서" 정렬에서 공종·세부항목 다음으로 비교할 기준의 순서.
+        // 항상 이 3개만 담으며(location/description/badge), 값은 순서만 의미한다.
+        let sortPriorityOrder = ['location', 'description', 'badge'];
 
         function ensureOriginalOrderSnapshot() {
             if (!originalPhotoOrderSnapshot) {
@@ -5392,6 +5657,55 @@
             const idx = wt.subTypes.indexOf((subType || '').trim());
             return idx === -1 ? 999 : idx;
         }
+
+        // "공종 지정순서" 정렬에서 공종·세부항목 다음 단계의 비교 함수들.
+        // sortPriorityOrder 배열에 담긴 순서대로 이 함수들을 차례로 적용한다.
+        const SORT_PRIORITY_COMPARATORS = {
+            location: (a, b, collator) => collator.compare(a.location || '', b.location || ''),
+            description: (a, b, collator) => collator.compare(a.description || '', b.description || ''),
+            badge: (a, b) => getBadgeStagePriority(a.badge) - getBadgeStagePriority(b.badge)
+        };
+
+        const SORT_PRIORITY_LABELS = {
+            location: { icon: 'fa-map-pin', color: 'text-rose-500', label: '위치' },
+            description: { icon: 'fa-align-left', color: 'text-sky-500', label: '내용' },
+            badge: { icon: 'fa-tag', color: 'text-amber-500', label: '태그 (착공전 → 준공 단계순)' }
+        };
+
+        function renderSortPriorityList() {
+            const listEl = document.getElementById('sortPriorityList');
+            if (!listEl) return;
+
+            listEl.innerHTML = sortPriorityOrder.map((key, idx) => {
+                const meta = SORT_PRIORITY_LABELS[key];
+                return `
+                    <div class="sort-priority-item flex items-center gap-2 p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs cursor-grab active:cursor-grabbing" data-key="${key}">
+                        <i class="fa-solid fa-grip-vertical text-slate-300 shrink-0"></i>
+                        <span class="w-5 h-5 flex items-center justify-center bg-indigo-600 text-white font-black rounded-full text-[10px] shrink-0">${idx + 1}</span>
+                        <i class="fa-solid ${meta.icon} ${meta.color} w-4 text-center shrink-0"></i>
+                        <span class="font-bold text-slate-700 flex-1">${meta.label}</span>
+                    </div>
+                `;
+            }).join('');
+
+            if (!listEl.dataset.sortableInit) {
+                new Sortable(listEl, {
+                    animation: 150,
+                    handle: '.sort-priority-item',
+                    onEnd: () => {
+                        const newOrder = Array.from(listEl.querySelectorAll('.sort-priority-item')).map(el => el.dataset.key);
+                        sortPriorityOrder = newOrder;
+                        renderSortPriorityList(); // 순번 배지(1,2,3) 갱신
+                        scheduleAutoSave();
+                        if (currentSortMode === 'workTypeOrder' || (document.getElementById('photoSortSelect') && document.getElementById('photoSortSelect').value === 'workTypeOrder')) {
+                            sortPhotos('workTypeOrder');
+                        }
+                    }
+                });
+                listEl.dataset.sortableInit = '1';
+            }
+        }
+
 
         // 착공전 → 시공전 → 시공중 → 시공후 → 준공 순서. 사진 태그(badge)에 해당 단어가
         // 포함되어 있으면 그 순번을 부여하고, 없으면 맨 뒤로 보낸다.
@@ -5428,7 +5742,7 @@
             } else if (mode === 'workType') {
                 photoList.sort((a, b) => collator.compare(a.workType || '', b.workType || ''));
             } else if (mode === 'workTypeOrder') {
-                // 1) 공종 지정순서 → 2) 세부항목 지정순서 → 3) 위치 → 4) 내용 → 5) 태그 단계(착공전~준공)
+                // 1) 공종 지정순서 → 2) 세부항목 지정순서 → 3~5) 위치/내용/태그를 sortPriorityOrder 순서대로 비교
                 photoList.sort((a, b) => {
                     const wtA = getWorkTypePriority(a.workType);
                     const wtB = getWorkTypePriority(b.workType);
@@ -5438,15 +5752,13 @@
                     const stB = getSubTypePriority(b.workType, b.subType);
                     if (stA !== stB) return stA - stB;
 
-                    const locCompare = collator.compare(a.location || '', b.location || '');
-                    if (locCompare !== 0) return locCompare;
-
-                    const descCompare = collator.compare(a.description || '', b.description || '');
-                    if (descCompare !== 0) return descCompare;
-
-                    const stageA = getBadgeStagePriority(a.badge);
-                    const stageB = getBadgeStagePriority(b.badge);
-                    return stageA - stageB;
+                    for (const key of sortPriorityOrder) {
+                        const comparator = SORT_PRIORITY_COMPARATORS[key];
+                        if (!comparator) continue;
+                        const result = comparator(a, b, collator);
+                        if (result !== 0) return result;
+                    }
+                    return 0;
                 });
             } else if (mode === 'location') {
                 photoList.sort((a, b) => collator.compare(a.location || '', b.location || ''));

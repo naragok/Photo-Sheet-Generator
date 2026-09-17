@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>토목 현장 사진대지 작성 프로그램 V6.2</title>
+    <title>토목 현장 사진대지 작성 프로그램 V6.3</title>
 
     <!-- ===== PWA: Web App Manifest & Favicons ===== -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='512' height='512' viewBox='0 0 512 512'><rect width='512' height='512' rx='100' fill='%230f172a'/><circle cx='256' cy='256' r='220' fill='%231e293b'/><path d='M256 110 C160 110 110 180 110 250 L402 250 C402 180 352 110 256 110 Z' fill='%23f59e0b'/><rect x='80' y='240' width='352' height='32' rx='10' fill='%23d97706'/><rect x='236' y='110' width='40' height='140' fill='%23fbbf24'/><path d='M160 300 H352 V410 H160 Z' fill='%23ffffff' opacity='0.9'/><path d='M180 320 L240 370 L290 335 L332 375 H180 Z' fill='%230f172a'/><circle cx='310' cy='330' r='14' fill='%23f59e0b'/></svg>">
@@ -527,7 +527,7 @@
                     <h1 class="font-black text-lg leading-tight flex items-center gap-2 text-slate-100 tracking-tight truncate">
                         토목 현장 사진대지 작성기
                         <span class="hidden md:inline text-[10px] bg-amber-500/20 text-amber-400 border border-amber-500/40 px-2 py-0.5 rounded-full font-bold tracking-wider uppercase shrink-0">Pro Ultimate</span>
-                        <span class="hidden md:inline text-[10px] bg-slate-700/60 text-slate-300 border border-slate-600/60 px-2 py-0.5 rounded-full font-bold tracking-wider shrink-0">V6.2</span>
+                        <span class="hidden md:inline text-[10px] bg-slate-700/60 text-slate-300 border border-slate-600/60 px-2 py-0.5 rounded-full font-bold tracking-wider shrink-0">V6.3</span>
                     </h1>
                     <p class="hidden sm:block text-[11px] text-slate-400 font-medium truncate">Civil Engineering Site Photo Sheet Generator</p>
                 </div>
@@ -1080,27 +1080,28 @@
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                             <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm space-y-2">
-                                <label class="block font-bold text-slate-800 text-xs">사진 카드 표 정보 필드 표시 토글</label>
+                                <label class="block font-bold text-slate-800 text-xs">사진 카드 표 정보 필드 인쇄 옵션</label>
+                                <p class="text-[10px] text-slate-400">기본적으로 모두 표시됩니다. 인쇄에서 빼려면 체크하세요. (날짜는 기본 숨김)</p>
                                 <div class="grid grid-cols-2 gap-2">
                                     <label class="flex items-center gap-2 p-2 rounded-lg border border-slate-200 cursor-pointer hover:bg-slate-50 transition select-none">
-                                        <input type="checkbox" id="showFieldWorkType" checked onchange="toggleFieldDisplay(this)" class="w-4 h-4 text-indigo-600 rounded border-slate-300">
-                                        <span class="font-bold text-slate-800 text-xs">공종 표시</span>
+                                        <input type="checkbox" id="showFieldWorkType" onchange="toggleFieldDisplay(this)" class="w-4 h-4 text-indigo-600 rounded border-slate-300">
+                                        <span class="font-bold text-slate-800 text-xs">공종 인쇄 안 함</span>
                                     </label>
                                     <label class="flex items-center gap-2 p-2 rounded-lg border border-slate-200 cursor-pointer hover:bg-slate-50 transition select-none">
-                                        <input type="checkbox" id="showFieldSubType" checked onchange="toggleFieldDisplay(this)" class="w-4 h-4 text-indigo-600 rounded border-slate-300">
-                                        <span class="font-bold text-slate-800 text-xs">세부항목 표시</span>
+                                        <input type="checkbox" id="showFieldSubType" onchange="toggleFieldDisplay(this)" class="w-4 h-4 text-indigo-600 rounded border-slate-300">
+                                        <span class="font-bold text-slate-800 text-xs">세부항목 인쇄 안 함</span>
                                     </label>
                                     <label class="flex items-center gap-2 p-2 rounded-lg border border-slate-200 cursor-pointer hover:bg-slate-50 transition select-none">
-                                        <input type="checkbox" id="showFieldDate" onchange="toggleFieldDisplay(this)" class="w-4 h-4 text-indigo-600 rounded border-slate-300">
-                                        <span class="font-bold text-slate-800 text-xs">날짜 표시</span>
+                                        <input type="checkbox" id="showFieldDate" checked onchange="toggleFieldDisplay(this)" class="w-4 h-4 text-indigo-600 rounded border-slate-300">
+                                        <span class="font-bold text-slate-800 text-xs">날짜 인쇄 안 함</span>
                                     </label>
                                     <label class="flex items-center gap-2 p-2 rounded-lg border border-slate-200 cursor-pointer hover:bg-slate-50 transition select-none">
-                                        <input type="checkbox" id="showFieldLocation" checked onchange="toggleFieldDisplay(this)" class="w-4 h-4 text-indigo-600 rounded border-slate-300">
-                                        <span class="font-bold text-slate-800 text-xs">위치 표시</span>
+                                        <input type="checkbox" id="showFieldLocation" onchange="toggleFieldDisplay(this)" class="w-4 h-4 text-indigo-600 rounded border-slate-300">
+                                        <span class="font-bold text-slate-800 text-xs">위치 인쇄 안 함</span>
                                     </label>
                                     <label class="flex items-center gap-2 p-2 rounded-lg border border-slate-200 cursor-pointer hover:bg-slate-50 transition select-none">
-                                        <input type="checkbox" id="showFieldDescription" checked onchange="toggleFieldDisplay(this)" class="w-4 h-4 text-indigo-600 rounded border-slate-300">
-                                        <span class="font-bold text-slate-800 text-xs">내용 표시</span>
+                                        <input type="checkbox" id="showFieldDescription" onchange="toggleFieldDisplay(this)" class="w-4 h-4 text-indigo-600 rounded border-slate-300">
+                                        <span class="font-bold text-slate-800 text-xs">내용 인쇄 안 함</span>
                                     </label>
                                 </div>
                             </div>
@@ -1800,11 +1801,11 @@
         let tocStyle = 'table'; // table | list | thumbnail | grouped
         let hideIndexNumber = false;
         let hidePageNumber = false;
-        let showFieldWorkType = true;
-        let showFieldSubType = true;
-        let showFieldDate = false;
-        let showFieldLocation = true;
-        let showFieldDescription = true;
+        let hideFieldWorkType = false;
+        let hideFieldSubType = false;
+        let hideFieldDate = true;
+        let hideFieldLocation = false;
+        let hideFieldDescription = false;
         let selectionMode = false;
         let selectedPhotoIds = new Set();
         let targetCardPhotoId = null;
@@ -1878,19 +1879,19 @@
             if (elShowPageNum) elShowPageNum.checked = hidePageNumber;
 
             const elFWorkType = document.getElementById('showFieldWorkType');
-            if (elFWorkType) elFWorkType.checked = showFieldWorkType;
+            if (elFWorkType) elFWorkType.checked = hideFieldWorkType;
 
             const elFSubType = document.getElementById('showFieldSubType');
-            if (elFSubType) elFSubType.checked = showFieldSubType;
+            if (elFSubType) elFSubType.checked = hideFieldSubType;
 
             const elFDate = document.getElementById('showFieldDate');
-            if (elFDate) elFDate.checked = showFieldDate;
+            if (elFDate) elFDate.checked = hideFieldDate;
 
             const elFLocation = document.getElementById('showFieldLocation');
-            if (elFLocation) elFLocation.checked = showFieldLocation;
+            if (elFLocation) elFLocation.checked = hideFieldLocation;
 
             const elFDesc = document.getElementById('showFieldDescription');
-            if (elFDesc) elFDesc.checked = showFieldDescription;
+            if (elFDesc) elFDesc.checked = hideFieldDescription;
 
             const elShowApproval = document.getElementById('showApprovalBoxToggle');
             if (elShowApproval) elShowApproval.checked = showApprovalBox;
@@ -2303,11 +2304,11 @@
                 tocStyle: document.getElementById('tocStyleSelect') ? document.getElementById('tocStyleSelect').value : tocStyle,
                 hideIndexNumber: document.getElementById('showIndexNumberToggle') ? document.getElementById('showIndexNumberToggle').checked : hideIndexNumber,
                 hidePageNumber: document.getElementById('showPageNumberToggle') ? document.getElementById('showPageNumberToggle').checked : hidePageNumber,
-                showFieldWorkType: document.getElementById('showFieldWorkType') ? document.getElementById('showFieldWorkType').checked : showFieldWorkType,
-                showFieldSubType: document.getElementById('showFieldSubType') ? document.getElementById('showFieldSubType').checked : showFieldSubType,
-                showFieldDate: document.getElementById('showFieldDate') ? document.getElementById('showFieldDate').checked : showFieldDate,
-                showFieldLocation: document.getElementById('showFieldLocation') ? document.getElementById('showFieldLocation').checked : showFieldLocation,
-                showFieldDescription: document.getElementById('showFieldDescription') ? document.getElementById('showFieldDescription').checked : showFieldDescription,
+                hideFieldWorkType: document.getElementById('showFieldWorkType') ? document.getElementById('showFieldWorkType').checked : hideFieldWorkType,
+                hideFieldSubType: document.getElementById('showFieldSubType') ? document.getElementById('showFieldSubType').checked : hideFieldSubType,
+                hideFieldDate: document.getElementById('showFieldDate') ? document.getElementById('showFieldDate').checked : hideFieldDate,
+                hideFieldLocation: document.getElementById('showFieldLocation') ? document.getElementById('showFieldLocation').checked : hideFieldLocation,
+                hideFieldDescription: document.getElementById('showFieldDescription') ? document.getElementById('showFieldDescription').checked : hideFieldDescription,
                 lockExport: document.getElementById('lockExportToggle') ? document.getElementById('lockExportToggle').checked : false,
                 photosPerPage: document.getElementById('photosPerPage') ? document.getElementById('photosPerPage').value : '2',
                 imageFitMode: document.getElementById('imageFitMode') ? document.getElementById('imageFitMode').value : 'cover',
@@ -2389,25 +2390,25 @@
                 hidePageNumber = data.hidePageNumber;
                 if (document.getElementById('showPageNumberToggle')) document.getElementById('showPageNumberToggle').checked = hidePageNumber;
             }
-            if (data.showFieldWorkType !== undefined) {
-                showFieldWorkType = data.showFieldWorkType;
-                if (document.getElementById('showFieldWorkType')) document.getElementById('showFieldWorkType').checked = showFieldWorkType;
+            if (data.hideFieldWorkType !== undefined) {
+                hideFieldWorkType = data.hideFieldWorkType;
+                if (document.getElementById('showFieldWorkType')) document.getElementById('showFieldWorkType').checked = hideFieldWorkType;
             }
-            if (data.showFieldSubType !== undefined) {
-                showFieldSubType = data.showFieldSubType;
-                if (document.getElementById('showFieldSubType')) document.getElementById('showFieldSubType').checked = showFieldSubType;
+            if (data.hideFieldSubType !== undefined) {
+                hideFieldSubType = data.hideFieldSubType;
+                if (document.getElementById('showFieldSubType')) document.getElementById('showFieldSubType').checked = hideFieldSubType;
             }
-            if (data.showFieldDate !== undefined) {
-                showFieldDate = data.showFieldDate;
-                if (document.getElementById('showFieldDate')) document.getElementById('showFieldDate').checked = showFieldDate;
+            if (data.hideFieldDate !== undefined) {
+                hideFieldDate = data.hideFieldDate;
+                if (document.getElementById('showFieldDate')) document.getElementById('showFieldDate').checked = hideFieldDate;
             }
-            if (data.showFieldLocation !== undefined) {
-                showFieldLocation = data.showFieldLocation;
-                if (document.getElementById('showFieldLocation')) document.getElementById('showFieldLocation').checked = showFieldLocation;
+            if (data.hideFieldLocation !== undefined) {
+                hideFieldLocation = data.hideFieldLocation;
+                if (document.getElementById('showFieldLocation')) document.getElementById('showFieldLocation').checked = hideFieldLocation;
             }
-            if (data.showFieldDescription !== undefined) {
-                showFieldDescription = data.showFieldDescription;
-                if (document.getElementById('showFieldDescription')) document.getElementById('showFieldDescription').checked = showFieldDescription;
+            if (data.hideFieldDescription !== undefined) {
+                hideFieldDescription = data.hideFieldDescription;
+                if (document.getElementById('showFieldDescription')) document.getElementById('showFieldDescription').checked = hideFieldDescription;
             }
             if (data.lockExport !== undefined && document.getElementById('lockExportToggle')) {
                 document.getElementById('lockExportToggle').checked = data.lockExport;
@@ -3977,14 +3978,14 @@
             const isEmpty = !photo;
 
             const [workTypeLabelW, workTypeValueW, dateLabelW, dateValueW] =
-                distributeRowWidths(9, 31, 9, 51, showFieldWorkType, showFieldDate);
+                distributeRowWidths(9, 31, 9, 51, !hideFieldWorkType, !hideFieldDate);
             const [locationLabelW, locationValueW, descriptionLabelW, descriptionValueW] =
-                distributeRowWidths(9, 31, 9, 51, showFieldLocation, showFieldDescription);
+                distributeRowWidths(9, 31, 9, 51, !hideFieldLocation, !hideFieldDescription);
 
             const valueFontClass = 'font-medium text-slate-900 text-xs';
 
             const workTypeCell = {
-                visible: showFieldWorkType,
+                visible: !hideFieldWorkType,
                 label: `<th style="width: ${workTypeLabelW}%;" class="bg-slate-100 text-center font-bold relative whitespace-nowrap">
                             공 종
                         </th>`,
@@ -4000,7 +4001,7 @@
                                        placeholder="공종 입력">
                                 <button onclick="openPhraseModalForCard('${photo.id}')" title="등록된 공정에서 선택" class="no-print text-slate-400 hover:text-teal-600 px-1 shrink-0"><i class="fa-solid fa-diagram-project text-xs"></i></button>
                             </div>
-                            <div class="flex items-center min-w-0 border-t border-slate-100 mt-0.5 pt-0.5 ${(!showFieldSubType || !(photo.subType && photo.subType.trim())) ? 'no-print' : ''}">
+                            <div class="flex items-center min-w-0 border-t border-slate-100 mt-0.5 pt-0.5 ${(hideFieldSubType || !(photo.subType && photo.subType.trim())) ? 'no-print' : ''}">
                                 <input type="text" 
                                        id="subtype_${photo.id}"
                                        value="${escapeHtml(photo.subType || '')}" 
@@ -4013,7 +4014,7 @@
             };
 
             const dateCell = {
-                visible: showFieldDate,
+                visible: !hideFieldDate,
                 label: `<th style="width: ${dateLabelW}%;" class="bg-slate-100 text-center font-bold whitespace-nowrap">날 짜</th>`,
                 value: isEmpty
                     ? `<td style="width: ${dateValueW}%;" class="p-0.5"></td>`
@@ -4026,7 +4027,7 @@
             };
 
             const locationCell = {
-                visible: showFieldLocation,
+                visible: !hideFieldLocation,
                 label: `<th style="width: ${locationLabelW}%;" class="bg-slate-100 text-center font-bold whitespace-nowrap">위 치</th>`,
                 value: isEmpty
                     ? `<td style="width: ${locationValueW}%;" class="p-0.5"></td>`
@@ -4044,7 +4045,7 @@
             };
 
             const descriptionCell = {
-                visible: showFieldDescription,
+                visible: !hideFieldDescription,
                 label: `<th style="width: ${descriptionLabelW}%;" class="bg-slate-100 text-center font-bold whitespace-nowrap">내 용</th>`,
                 value: isEmpty
                     ? `<td style="width: ${descriptionValueW}%;" class="p-0.5"></td>`
@@ -4558,10 +4559,10 @@
             const fDate = document.getElementById('showFieldDate');
             const fLocation = document.getElementById('showFieldLocation');
             const fDescription = document.getElementById('showFieldDescription');
-            if (fWorkType) showFieldWorkType = fWorkType.checked;
-            if (fDate) showFieldDate = fDate.checked;
-            if (fLocation) showFieldLocation = fLocation.checked;
-            if (fDescription) showFieldDescription = fDescription.checked;
+            if (fWorkType) hideFieldWorkType = fWorkType.checked;
+            if (fDate) hideFieldDate = fDate.checked;
+            if (fLocation) hideFieldLocation = fLocation.checked;
+            if (fDescription) hideFieldDescription = fDescription.checked;
 
             const totalPhotos = photoList.length;
             const totalPages = Math.ceil(totalPhotos / photosPerPage) || 1;
@@ -5649,10 +5650,10 @@
             const warnings = [];
             photoList.forEach((photo, idx) => {
                 const missing = [];
-                if (showFieldWorkType && !photo.workType.trim()) missing.push('공종');
-                if (showFieldDate && !photo.date) missing.push('날짜');
-                if (showFieldLocation && !photo.location.trim()) missing.push('위치');
-                if (showFieldDescription && !photo.description.trim()) missing.push('내용');
+                if (!hideFieldWorkType && !photo.workType.trim()) missing.push('공종');
+                if (!hideFieldDate && !photo.date) missing.push('날짜');
+                if (!hideFieldLocation && !photo.location.trim()) missing.push('위치');
+                if (!hideFieldDescription && !photo.description.trim()) missing.push('내용');
                 if (missing.length > 0) {
                     warnings.push({ index: idx + 1, missing });
                 }
@@ -5707,20 +5708,20 @@
                 return el ? el.checked : false;
             }).length;
 
-            if (checkedCount === 0) {
-                if (checkboxEl) checkboxEl.checked = true;
-                showToast("최소 1개 항목은 표시되어야 합니다.");
+            if (checkedCount === checks.length) {
+                if (checkboxEl) checkboxEl.checked = false;
+                showToast("최소 1개 항목은 인쇄에 표시되어야 합니다.");
             }
             const fWork = document.getElementById('showFieldWorkType');
             const fSubType = document.getElementById('showFieldSubType');
             const fDate = document.getElementById('showFieldDate');
             const fLoc = document.getElementById('showFieldLocation');
             const fDesc = document.getElementById('showFieldDescription');
-            if (fWork) showFieldWorkType = fWork.checked;
-            if (fSubType) showFieldSubType = fSubType.checked;
-            if (fDate) showFieldDate = fDate.checked;
-            if (fLoc) showFieldLocation = fLoc.checked;
-            if (fDesc) showFieldDescription = fDesc.checked;
+            if (fWork) hideFieldWorkType = fWork.checked;
+            if (fSubType) hideFieldSubType = fSubType.checked;
+            if (fDate) hideFieldDate = fDate.checked;
+            if (fLoc) hideFieldLocation = fLoc.checked;
+            if (fDesc) hideFieldDescription = fDesc.checked;
             renderPhotoSheets();
         }
 
@@ -5975,10 +5976,10 @@
             const ids = new Set();
             photoList.forEach(photo => {
                 if (!photo.url) { ids.add(photo.id); return; }
-                if (showFieldWorkType && !(photo.workType || '').trim()) { ids.add(photo.id); return; }
-                if (showFieldDate && !photo.date) { ids.add(photo.id); return; }
-                if (showFieldLocation && !(photo.location || '').trim()) { ids.add(photo.id); return; }
-                if (showFieldDescription && !(photo.description || '').trim()) { ids.add(photo.id); return; }
+                if (!hideFieldWorkType && !(photo.workType || '').trim()) { ids.add(photo.id); return; }
+                if (!hideFieldDate && !photo.date) { ids.add(photo.id); return; }
+                if (!hideFieldLocation && !(photo.location || '').trim()) { ids.add(photo.id); return; }
+                if (!hideFieldDescription && !(photo.description || '').trim()) { ids.add(photo.id); return; }
             });
             return ids;
         }
@@ -5989,10 +5990,10 @@
 
             photoList.forEach(photo => {
                 if (!photo.url) missingImage++;
-                if (showFieldWorkType && !(photo.workType || '').trim()) missingWorkType++;
-                if (showFieldDate && !photo.date) missingDate++;
-                if (showFieldLocation && !(photo.location || '').trim()) missingLocation++;
-                if (showFieldDescription && !(photo.description || '').trim()) missingDescription++;
+                if (!hideFieldWorkType && !(photo.workType || '').trim()) missingWorkType++;
+                if (!hideFieldDate && !photo.date) missingDate++;
+                if (!hideFieldLocation && !(photo.location || '').trim()) missingLocation++;
+                if (!hideFieldDescription && !(photo.description || '').trim()) missingDescription++;
 
                 [photo.url, photo.beforeUrl, photo.duringUrl].forEach(u => {
                     if (u) totalBytes += u.length * 0.75;
@@ -6027,10 +6028,10 @@
             const rows = [
                 { label: '사진 없는 빈 카드', count: stats.missingImage },
             ];
-            if (showFieldWorkType) rows.push({ label: '공종 누락', count: stats.missingWorkType });
-            if (showFieldDate) rows.push({ label: '날짜 누락', count: stats.missingDate });
-            if (showFieldLocation) rows.push({ label: '위치 누락', count: stats.missingLocation });
-            if (showFieldDescription) rows.push({ label: '내용 누락', count: stats.missingDescription });
+            if (!hideFieldWorkType) rows.push({ label: '공종 누락', count: stats.missingWorkType });
+            if (!hideFieldDate) rows.push({ label: '날짜 누락', count: stats.missingDate });
+            if (!hideFieldLocation) rows.push({ label: '위치 누락', count: stats.missingLocation });
+            if (!hideFieldDescription) rows.push({ label: '내용 누락', count: stats.missingDescription });
             rows.push({ label: '중복 의심 사진', count: stats.duplicateCount });
 
             const listEl = document.getElementById('statsCompletionList');
@@ -6132,7 +6133,7 @@
             if (!input) return;
             const row = input.closest('div');
             if (!row) return;
-            if (showFieldSubType && input.value && input.value.trim()) {
+            if (!hideFieldSubType && input.value && input.value.trim()) {
                 row.classList.remove('no-print');
             } else {
                 row.classList.add('no-print');

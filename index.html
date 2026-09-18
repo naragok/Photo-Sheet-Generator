@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>토목 현장 사진대지 작성 프로그램 V6.3</title>
+    <title>토목 현장 사진대지 작성 프로그램 V6.5</title>
 
     <!-- ===== PWA: Web App Manifest & Favicons ===== -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='512' height='512' viewBox='0 0 512 512'><rect width='512' height='512' rx='100' fill='%230f172a'/><circle cx='256' cy='256' r='220' fill='%231e293b'/><path d='M256 110 C160 110 110 180 110 250 L402 250 C402 180 352 110 256 110 Z' fill='%23f59e0b'/><rect x='80' y='240' width='352' height='32' rx='10' fill='%23d97706'/><rect x='236' y='110' width='40' height='140' fill='%23fbbf24'/><path d='M160 300 H352 V410 H160 Z' fill='%23ffffff' opacity='0.9'/><path d='M180 320 L240 370 L290 335 L332 375 H180 Z' fill='%230f172a'/><circle cx='310' cy='330' r='14' fill='%23f59e0b'/></svg>">
@@ -527,7 +527,7 @@
                     <h1 class="font-black text-lg leading-tight flex items-center gap-2 text-slate-100 tracking-tight truncate">
                         토목 현장 사진대지 작성기
                         <span class="hidden md:inline text-[10px] bg-amber-500/20 text-amber-400 border border-amber-500/40 px-2 py-0.5 rounded-full font-bold tracking-wider uppercase shrink-0">Pro Ultimate</span>
-                        <span class="hidden md:inline text-[10px] bg-slate-700/60 text-slate-300 border border-slate-600/60 px-2 py-0.5 rounded-full font-bold tracking-wider shrink-0">V6.3</span>
+                        <span class="hidden md:inline text-[10px] bg-slate-700/60 text-slate-300 border border-slate-600/60 px-2 py-0.5 rounded-full font-bold tracking-wider shrink-0">V6.5</span>
                     </h1>
                     <p class="hidden sm:block text-[11px] text-slate-400 font-medium truncate">Civil Engineering Site Photo Sheet Generator</p>
                 </div>
@@ -726,6 +726,12 @@
                 <input type="text" id="bulkBadgeInput" list="batchBadgeOptions" placeholder="선택된 사진에 태그 일괄적용" class="px-2.5 py-1.5 border border-blue-400 rounded-lg text-xs outline-none text-slate-800 w-52">
                 <button onclick="applyBulkBadge()" class="px-2.5 py-1.5 bg-white hover:bg-blue-50 text-blue-700 rounded-lg text-xs font-bold transition shrink-0">
                     태그 적용
+                </button>
+                <button onclick="rotateBulkPhotos(-90)" title="선택된 사진 전체를 왼쪽으로 90도 회전" class="w-8 h-8 flex items-center justify-center bg-blue-500 hover:bg-blue-400 rounded-lg text-xs transition shrink-0">
+                    <i class="fa-solid fa-rotate-left"></i>
+                </button>
+                <button onclick="rotateBulkPhotos(90)" title="선택된 사진 전체를 오른쪽으로 90도 회전" class="w-8 h-8 flex items-center justify-center bg-blue-500 hover:bg-blue-400 rounded-lg text-xs transition shrink-0">
+                    <i class="fa-solid fa-rotate-right"></i>
                 </button>
                 <button onclick="deleteBulkPhotos(false)" class="px-2.5 py-1.5 bg-amber-600 hover:bg-amber-500 rounded-lg text-xs font-bold transition shrink-0" title="사진만 비우고 빈 카드로 유지">
                     사진 비우기
@@ -1132,7 +1138,7 @@
 
                         <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
                             <label class="block font-bold text-slate-800 mb-1.5 text-xs">문서 보조 인쇄 옵션</label>
-                            <p class="text-[10px] text-slate-400 mb-2">목차 · 사진 순번 · 페이지 번호는 기본적으로 표시됩니다. 인쇄에서 빼려면 체크하세요.</p>
+                            <p class="text-[10px] text-slate-400 mb-2">목차 · 사진 순번 · 페이지 번호는 기본적으로 표시됩니다. 인쇄에서 빼려면 체크하세요. (워터마크는 반대로 체크해야 켜집니다)</p>
                             <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
                                 <label class="inline-flex items-center gap-1.5 cursor-pointer text-xs text-slate-700 font-bold select-none p-1.5 rounded-lg border border-slate-100 hover:bg-slate-50">
                                     <input type="checkbox" id="showTocToggle" onchange="toggleTocDisplay(this.checked)" class="w-3.5 h-3.5 text-indigo-600 rounded border-slate-300">
@@ -1149,6 +1155,10 @@
                                 <label class="inline-flex items-center gap-1.5 cursor-pointer text-xs text-slate-700 font-bold select-none p-1.5 rounded-lg border border-slate-100 hover:bg-slate-50">
                                     <input type="checkbox" id="lockExportToggle" class="w-3.5 h-3.5 text-indigo-600 rounded border-slate-300">
                                     HTML 읽기전용 잠금
+                                </label>
+                                <label class="inline-flex items-center gap-1.5 cursor-pointer text-xs text-slate-700 font-bold select-none p-1.5 rounded-lg border border-slate-100 hover:bg-slate-50">
+                                    <input type="checkbox" id="showPhotoWatermarkToggle" onchange="togglePhotoWatermarkDisplay(this.checked)" class="w-3.5 h-3.5 text-indigo-600 rounded border-slate-300">
+                                    촬영정보 워터마크 표시
                                 </label>
                             </div>
 
@@ -1588,6 +1598,9 @@
             <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">완성도 체크</p>
             <div id="statsCompletionList" class="space-y-1 mb-4"></div>
 
+            <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">공종별 사진 분포</p>
+            <div id="statsWorkTypeChart" class="space-y-1.5 mb-4"></div>
+
             <div class="grid grid-cols-2 gap-2">
                 <button onclick="toggleIncompleteFilter(); closeStatsModal();" class="px-3 py-2 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-xl text-xs font-bold text-amber-700 transition">
                     미분류만 보기
@@ -1699,6 +1712,14 @@
         </div>
     </div>
 
+    <!-- Page Thumbnail Navigator: 화면 우측에 고정되어 페이지 축소판을 보여주고, 클릭하면 해당 페이지로 스크롤한다. -->
+    <div id="pageNavigator" class="hidden no-print fixed right-2 top-1/2 -translate-y-1/2 z-40 flex flex-col items-end gap-1.5 max-h-[80vh]">
+        <button onclick="togglePageNavigatorCollapse()" id="pageNavigatorToggleBtn" class="w-7 h-7 flex items-center justify-center bg-slate-900/90 hover:bg-slate-800 text-white rounded-lg shadow-lg text-xs mb-1" title="페이지 목록 접기/펼치기">
+            <i class="fa-solid fa-chevron-right"></i>
+        </button>
+        <div id="pageNavigatorList" class="flex flex-col gap-1 overflow-y-auto max-h-[75vh] pr-0.5 no-scrollbar"></div>
+    </div>
+
     <script>
         // PWA Installation Handler
         let deferredPrompt = null;
@@ -1806,6 +1827,7 @@
         let hideFieldDate = true;
         let hideFieldLocation = false;
         let hideFieldDescription = false;
+        let showPhotoWatermark = false;
         let selectionMode = false;
         let selectedPhotoIds = new Set();
         let targetCardPhotoId = null;
@@ -1877,6 +1899,9 @@
 
             const elShowPageNum = document.getElementById('showPageNumberToggle');
             if (elShowPageNum) elShowPageNum.checked = hidePageNumber;
+
+            const elWatermark = document.getElementById('showPhotoWatermarkToggle');
+            if (elWatermark) elWatermark.checked = showPhotoWatermark;
 
             const elFWorkType = document.getElementById('showFieldWorkType');
             if (elFWorkType) elFWorkType.checked = hideFieldWorkType;
@@ -2304,6 +2329,7 @@
                 tocStyle: document.getElementById('tocStyleSelect') ? document.getElementById('tocStyleSelect').value : tocStyle,
                 hideIndexNumber: document.getElementById('showIndexNumberToggle') ? document.getElementById('showIndexNumberToggle').checked : hideIndexNumber,
                 hidePageNumber: document.getElementById('showPageNumberToggle') ? document.getElementById('showPageNumberToggle').checked : hidePageNumber,
+                showPhotoWatermark: document.getElementById('showPhotoWatermarkToggle') ? document.getElementById('showPhotoWatermarkToggle').checked : showPhotoWatermark,
                 hideFieldWorkType: document.getElementById('showFieldWorkType') ? document.getElementById('showFieldWorkType').checked : hideFieldWorkType,
                 hideFieldSubType: document.getElementById('showFieldSubType') ? document.getElementById('showFieldSubType').checked : hideFieldSubType,
                 hideFieldDate: document.getElementById('showFieldDate') ? document.getElementById('showFieldDate').checked : hideFieldDate,
@@ -2389,6 +2415,10 @@
             if (data.hidePageNumber !== undefined) {
                 hidePageNumber = data.hidePageNumber;
                 if (document.getElementById('showPageNumberToggle')) document.getElementById('showPageNumberToggle').checked = hidePageNumber;
+            }
+            if (data.showPhotoWatermark !== undefined) {
+                showPhotoWatermark = data.showPhotoWatermark;
+                if (document.getElementById('showPhotoWatermarkToggle')) document.getElementById('showPhotoWatermarkToggle').checked = showPhotoWatermark;
             }
             if (data.hideFieldWorkType !== undefined) {
                 hideFieldWorkType = data.hideFieldWorkType;
@@ -3329,6 +3359,12 @@
                         </div>
                         <div class="hidden print-only text-slate-300 text-xs font-semibold">사진 미등록</div>
                     `}
+                    ${(showPhotoWatermark && photo.url && (photo.date || (photo.gpsLat && photo.gpsLng))) ? `
+                        <div class="photo-watermark absolute bottom-1.5 right-1.5 z-10 bg-black/55 text-white text-[9px] font-bold leading-tight px-2 py-1 rounded backdrop-blur-[1px] text-right pointer-events-none">
+                            ${photo.date ? `<div>${escapeHtml(photo.date)}</div>` : ''}
+                            ${(photo.gpsLat && photo.gpsLng) ? `<div>${photo.gpsLat.toFixed(5)}, ${photo.gpsLng.toFixed(5)}</div>` : ''}
+                        </div>
+                    ` : ''}
                 </div>
             `;
         }
@@ -4645,6 +4681,7 @@
                 const pageDiv = document.createElement('div');
                 pageDiv.className = 'a4-preview-page a4-page flex flex-col justify-between border border-slate-200 overflow-hidden' + (filterActive && !pageHasMatch ? ' hidden no-print' : '');
                 pageDiv.dataset.pageIndex = pageIdx;
+                pageDiv.id = `a4-page-${pageIdx}`;
 
                 let pageHTML = `
                     <div class="w-full flex-1 flex flex-col justify-between overflow-hidden">
@@ -4835,6 +4872,8 @@
             // 저장된 내용이 길어서 여러 줄로 줄바꿈되는 경우, 렌더링 직후에도
             // textarea 높이가 내용에 맞춰 자동으로 늘어나도록 보정한다.
             document.querySelectorAll('.auto-fit-desc').forEach(el => autoResizeDescTextarea(el));
+
+            renderPageNavigator(totalPages);
 
             scheduleAutoSave();
             updateUndoRedoButtons();
@@ -5519,6 +5558,12 @@
             renderPhotoSheets();
         }
 
+        function togglePhotoWatermarkDisplay(checked) {
+            saveCurrentInputValues();
+            showPhotoWatermark = checked;
+            renderPhotoSheets();
+        }
+
         function toggleApprovalBoxDisplay(checked) {
             saveCurrentInputValues();
             showApprovalBox = checked;
@@ -5644,6 +5689,29 @@
             });
             renderPhotoSheets();
             showToast(`선택한 ${selectedPhotoIds.size}장에 태그를 적용했습니다.`);
+        }
+
+        // 선택모드에서 체크된 사진들을 한 번에 회전시킨다. 이미지가 없는 빈 카드는 건너뛴다.
+        function rotateBulkPhotos(degrees) {
+            if (selectedPhotoIds.size === 0) {
+                showToast("선택된 사진이 없습니다.");
+                return;
+            }
+            saveCurrentInputValues();
+            pushUndoSnapshot();
+            let rotatedCount = 0;
+            photoList.forEach(p => {
+                if (selectedPhotoIds.has(p.id) && p.url) {
+                    p.rotation = ((p.rotation || 0) + degrees + 360) % 360;
+                    rotatedCount++;
+                }
+            });
+            renderPhotoSheets();
+            if (rotatedCount > 0) {
+                showToast(`선택한 사진 ${rotatedCount}장을 회전했습니다.`);
+            } else {
+                showToast("선택한 항목 중 회전할 사진이 없습니다.");
+            }
         }
 
         function findMissingFieldWarnings() {
@@ -6011,6 +6079,42 @@
             };
         }
 
+        // 페이지 축소판 내비게이터: 사진이 있는 본문 페이지 수만큼 번호 버튼을 만들고,
+        // 클릭하면 해당 페이지로 부드럽게 스크롤한다. 표지·목차·위치도 페이지는 대상이 아니다.
+        let pageNavigatorCollapsed = false;
+        function renderPageNavigator(totalPages) {
+            const navEl = document.getElementById('pageNavigator');
+            const listEl = document.getElementById('pageNavigatorList');
+            if (!navEl || !listEl) return;
+
+            // 페이지가 2장 이하면(스크롤할 필요가 거의 없으면) 내비게이터를 숨긴다.
+            if (!totalPages || totalPages <= 2) {
+                navEl.classList.add('hidden');
+                return;
+            }
+            navEl.classList.remove('hidden');
+
+            listEl.innerHTML = Array.from({ length: totalPages }, (_, idx) => `
+                <button onclick="scrollToPage(${idx})" title="${idx + 1}페이지로 이동"
+                    class="page-nav-btn ${pageNavigatorCollapsed ? 'w-2.5 h-2.5' : 'w-7 h-7 text-[10px]'} shrink-0 flex items-center justify-center bg-white/90 hover:bg-amber-100 border border-slate-300 rounded-lg shadow-sm font-bold text-slate-600 transition">
+                    ${pageNavigatorCollapsed ? '' : idx + 1}
+                </button>
+            `).join('');
+        }
+
+        function scrollToPage(pageIdx) {
+            const target = document.getElementById(`a4-page-${pageIdx}`);
+            if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function togglePageNavigatorCollapse() {
+            pageNavigatorCollapsed = !pageNavigatorCollapsed;
+            const btn = document.getElementById('pageNavigatorToggleBtn');
+            if (btn) btn.innerHTML = `<i class="fa-solid fa-chevron-${pageNavigatorCollapsed ? 'left' : 'right'}"></i>`;
+            const totalPages = document.getElementById('pageNavigatorList').children.length;
+            renderPageNavigator(totalPages);
+        }
+
         function formatBytes(bytes) {
             if (bytes < 1024) return Math.round(bytes) + ' B';
             if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
@@ -6043,6 +6147,52 @@
                     </div>
                 `).join('');
             }
+
+            renderWorkTypeStatsChart();
+        }
+
+        // 공종별(및 등록된 세부항목별) 사진 매수를 막대그래프로 보여준다.
+        // standardWorkTypes에 등록된 순서를 그대로 따르고, 등록되지 않은 공종은 맨 뒤에 모아 표시한다.
+        function renderWorkTypeStatsChart() {
+            const chartEl = document.getElementById('statsWorkTypeChart');
+            if (!chartEl) return;
+
+            const counts = {};
+            photoList.forEach(p => {
+                const key = (p.workType || '').trim() || '(공종 미지정)';
+                counts[key] = (counts[key] || 0) + 1;
+            });
+
+            const registeredNames = standardWorkTypes.map(wt => wt.name);
+            const orderedKeys = [
+                ...registeredNames.filter(name => counts[name]),
+                ...Object.keys(counts).filter(key => !registeredNames.includes(key))
+            ];
+
+            if (orderedKeys.length === 0) {
+                chartEl.innerHTML = `<p class="text-[11px] text-slate-400 text-center py-2">등록된 사진이 없습니다.</p>`;
+                return;
+            }
+
+            const maxCount = Math.max(...orderedKeys.map(k => counts[k]));
+            const barColors = ['bg-amber-500', 'bg-teal-500', 'bg-indigo-500', 'bg-emerald-500', 'bg-rose-400', 'bg-sky-500', 'bg-purple-500'];
+
+            chartEl.innerHTML = orderedKeys.map((key, idx) => {
+                const count = counts[key];
+                const pct = Math.max(6, Math.round((count / maxCount) * 100));
+                const color = barColors[idx % barColors.length];
+                return `
+                    <div class="text-[11px]">
+                        <div class="flex items-center justify-between mb-0.5">
+                            <span class="font-bold text-slate-700 truncate">${escapeHtml(key)}</span>
+                            <span class="font-black text-slate-500 shrink-0 ml-2">${count}장</span>
+                        </div>
+                        <div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                            <div class="${color} h-full rounded-full transition-all" style="width: ${pct}%"></div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
         }
 
         function openStatsModal() {

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>토목 현장 사진대지 작성 프로그램 V7.1</title>
+    <title>토목 현장 사진대지 작성 프로그램 V7.3</title>
 
     <!-- ===== PWA: Web App Manifest & Favicons ===== -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='512' height='512' viewBox='0 0 512 512'><rect width='512' height='512' rx='100' fill='%230f172a'/><circle cx='256' cy='256' r='220' fill='%231e293b'/><path d='M256 110 C160 110 110 180 110 250 L402 250 C402 180 352 110 256 110 Z' fill='%23f59e0b'/><rect x='80' y='240' width='352' height='32' rx='10' fill='%23d97706'/><rect x='236' y='110' width='40' height='140' fill='%23fbbf24'/><path d='M160 300 H352 V410 H160 Z' fill='%23ffffff' opacity='0.9'/><path d='M180 320 L240 370 L290 335 L332 375 H180 Z' fill='%230f172a'/><circle cx='310' cy='330' r='14' fill='%23f59e0b'/></svg>">
@@ -527,7 +527,7 @@
                     <h1 class="font-black text-lg leading-tight flex items-center gap-2 text-slate-100 tracking-tight truncate">
                         토목 현장 사진대지 작성기
                         <span class="hidden md:inline text-[10px] bg-amber-500/20 text-amber-400 border border-amber-500/40 px-2 py-0.5 rounded-full font-bold tracking-wider uppercase shrink-0">Pro Ultimate</span>
-                        <span class="hidden md:inline text-[10px] bg-slate-700/60 text-slate-300 border border-slate-600/60 px-2 py-0.5 rounded-full font-bold tracking-wider shrink-0">V7.1</span>
+                        <span class="hidden md:inline text-[10px] bg-slate-700/60 text-slate-300 border border-slate-600/60 px-2 py-0.5 rounded-full font-bold tracking-wider shrink-0">V7.3</span>
                     </h1>
                     <p class="hidden sm:block text-[11px] text-slate-400 font-medium truncate">Civil Engineering Site Photo Sheet Generator</p>
                 </div>
@@ -689,13 +689,13 @@
 
                 <div id="advancedFilterPanel" class="hidden mt-2.5 pt-2.5 border-t border-slate-100 flex flex-wrap items-center gap-2">
                     <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider shrink-0">촬영일자</span>
-                    <input type="date" id="photoSearchDateFrom" onchange="applyPhotoFilter()" title="시작일" class="px-2 py-1.5 border border-slate-300 rounded-lg text-xs outline-none focus:ring-2 focus:ring-amber-500/50">
+                    <input type="date" id="photoSearchDateFrom" onchange="applyPhotoFilterImmediate()" title="시작일" class="px-2 py-1.5 border border-slate-300 rounded-lg text-xs outline-none focus:ring-2 focus:ring-amber-500/50">
                     <span class="text-slate-300 text-xs">~</span>
-                    <input type="date" id="photoSearchDateTo" onchange="applyPhotoFilter()" title="종료일" class="px-2 py-1.5 border border-slate-300 rounded-lg text-xs outline-none focus:ring-2 focus:ring-amber-500/50">
+                    <input type="date" id="photoSearchDateTo" onchange="applyPhotoFilterImmediate()" title="종료일" class="px-2 py-1.5 border border-slate-300 rounded-lg text-xs outline-none focus:ring-2 focus:ring-amber-500/50">
 
                     <div class="flex items-center gap-1 border-l border-slate-200 pl-2 shrink-0">
                         <i class="fa-solid fa-diagram-project text-teal-500 text-xs"></i>
-                        <select id="photoWorkTypeFilter" onchange="applyPhotoFilter()" class="px-2 py-1.5 border border-slate-300 rounded-lg text-xs outline-none font-bold text-slate-700 bg-slate-50/80 hover:bg-white focus:ring-2 focus:ring-teal-500/50 cursor-pointer max-w-[140px]">
+                        <select id="photoWorkTypeFilter" onchange="applyPhotoFilterImmediate()" class="px-2 py-1.5 border border-slate-300 rounded-lg text-xs outline-none font-bold text-slate-700 bg-slate-50/80 hover:bg-white focus:ring-2 focus:ring-teal-500/50 cursor-pointer max-w-[140px]">
                             <option value="" selected>공종: 전체 표시</option>
                         </select>
                     </div>
@@ -5241,19 +5241,24 @@
                 photoSheetsContainer.appendChild(pageDiv);
 
                 const pageGroupEl = document.getElementById(`page_group_${pageIdx}`);
-                if (pageGroupEl) {
-                    new Sortable(pageGroupEl, {
-                        animation: 150,
-                        ghostClass: 'opacity-40',
-                        group: 'photoPages', // 모든 페이지가 같은 그룹을 공유해, 페이지 경계를 넘어 드래그로 옮길 수 있다.
-                        handle: '.drag-handle', // 이 손잡이 아이콘에서만 드래그가 시작되어, 입력칸을 스치는 실수 터치로는 드래그되지 않는다.
-                        scroll: true, // 카드를 화면 가장자리 쪽으로 끌면 자동으로 스크롤되어 화면 밖 페이지까지 옮길 수 있다.
-                        scrollSensitivity: 100, // 가장자리로부터 이 거리(px) 안에 들어오면 스크롤 시작
-                        scrollSpeed: 12,
-                        onEnd: function () {
-                            reorderPhotosFromDOM();
-                        }
-                    });
+                if (pageGroupEl && typeof Sortable !== 'undefined') {
+                    try {
+                        new Sortable(pageGroupEl, {
+                            animation: 150,
+                            ghostClass: 'opacity-40',
+                            group: 'photoPages', // 모든 페이지가 같은 그룹을 공유해, 페이지 경계를 넘어 드래그로 옮길 수 있다.
+                            handle: '.drag-handle', // 이 손잡이 아이콘에서만 드래그가 시작되어, 입력칸을 스치는 실수 터치로는 드래그되지 않는다.
+                            scroll: true, // 카드를 화면 가장자리 쪽으로 끌면 자동으로 스크롤되어 화면 밖 페이지까지 옮길 수 있다.
+                            scrollSensitivity: 100, // 가장자리로부터 이 거리(px) 안에 들어오면 스크롤 시작
+                            scrollSpeed: 12,
+                            onEnd: function () {
+                                reorderPhotosFromDOM();
+                            }
+                        });
+                    } catch (e) {
+                        // SortableJS 로딩/초기화 실패 시에도 카드 렌더링 자체는 계속되어야 하므로 조용히 무시한다.
+                        // (화살표 버튼(movePhoto)과 순번 이동(movePhotoToIndex)으로 계속 순서 변경이 가능하다.)
+                    }
                 }
             }
 
@@ -6205,7 +6210,21 @@
             renderPhotoSheets();
         }
 
+        // 검색어를 한 글자 입력할 때마다 renderPhotoSheets()(전체 카드 재구성)를 즉시 실행하면
+        // 사진이 많을 때 눈에 띄게 버벅인다. 타이핑이 잠시 멈췄을 때만 한 번 실행되도록
+        // 디바운스를 적용한다. 날짜/공종 select 등 즉시 반응이 자연스러운 곳은 그대로 둔다.
+        let photoFilterDebounceTimer = null;
         function applyPhotoFilter() {
+            clearTimeout(photoFilterDebounceTimer);
+            photoFilterDebounceTimer = setTimeout(() => {
+                renderPhotoSheets();
+            }, 180);
+        }
+
+        // select/체크박스 등 값이 바뀌는 즉시 반응해야 자연스러운 필터에서 사용.
+        // 디바운스 없이 곧바로 재렌더링한다.
+        function applyPhotoFilterImmediate() {
+            clearTimeout(photoFilterDebounceTimer);
             renderPhotoSheets();
         }
 
@@ -6261,30 +6280,49 @@
                         <span class="w-5 h-5 flex items-center justify-center bg-indigo-600 text-white font-black rounded-full text-[10px] shrink-0 sort-priority-index">${idx + 1}</span>
                         <i class="fa-solid ${meta.icon} ${meta.color} w-4 text-center shrink-0"></i>
                         <span class="font-bold text-slate-700 flex-1">${meta.label}</span>
+                        <div class="flex items-center gap-0.5 shrink-0">
+                            <button type="button" onclick="moveSortPriorityItem(${idx}, -1)" title="위로" ${idx === 0 ? 'disabled' : ''} class="w-6 h-6 flex items-center justify-center text-slate-400 hover:text-indigo-700 hover:bg-indigo-100 rounded-md disabled:opacity-20 disabled:cursor-not-allowed"><i class="fa-solid fa-chevron-up text-[10px]"></i></button>
+                            <button type="button" onclick="moveSortPriorityItem(${idx}, 1)" title="아래로" ${idx === sortPriorityOrder.length - 1 ? 'disabled' : ''} class="w-6 h-6 flex items-center justify-center text-slate-400 hover:text-indigo-700 hover:bg-indigo-100 rounded-md disabled:opacity-20 disabled:cursor-not-allowed"><i class="fa-solid fa-chevron-down text-[10px]"></i></button>
+                        </div>
                     </div>
                 `;
             }).join('');
 
-            if (!listEl.dataset.sortableInit) {
-                new Sortable(listEl, {
-                    animation: 150,
-                    onEnd: () => {
-                        const newOrder = Array.from(listEl.querySelectorAll('.sort-priority-item')).map(el => el.dataset.key);
-                        sortPriorityOrder = newOrder;
-                        // 순번 배지(1,2,3)만 즉시 갱신한다. innerHTML을 통째로 재작성하면
-                        // 드래그 직후 SortableJS가 옮겨놓은 DOM 노드가 통째로 교체되어
-                        // 다음 드래그 동작이 불안정해질 수 있으므로 배지 텍스트만 수정한다.
-                        listEl.querySelectorAll('.sort-priority-item').forEach((el, idx) => {
-                            const badge = el.querySelector('.sort-priority-index');
-                            if (badge) badge.textContent = idx + 1;
-                        });
-                        scheduleAutoSave();
-                        if (currentSortMode === 'workTypeOrder' || (document.getElementById('photoSortSelect') && document.getElementById('photoSortSelect').value === 'workTypeOrder')) {
-                            sortPhotos('workTypeOrder');
+            // SortableJS가 환경에 따라(예: GitHub Pages 정적 호스팅) 간헐적으로 드래그를
+            // 인식하지 못하는 경우가 있어, 위/아래 화살표 버튼으로도 항상 순서를 바꿀 수 있게 했다.
+            if (typeof Sortable !== 'undefined' && !listEl.dataset.sortableInit) {
+                try {
+                    new Sortable(listEl, {
+                        animation: 150,
+                        onEnd: () => {
+                            const newOrder = Array.from(listEl.querySelectorAll('.sort-priority-item')).map(el => el.dataset.key);
+                            sortPriorityOrder = newOrder;
+                            applySortPriorityChange();
                         }
-                    }
-                });
-                listEl.dataset.sortableInit = '1';
+                    });
+                    listEl.dataset.sortableInit = '1';
+                } catch (e) {
+                    // SortableJS 초기화 자체가 실패해도 화살표 버튼은 계속 동작해야 하므로 조용히 무시한다.
+                }
+            }
+        }
+
+        // 화살표 버튼으로 우선순위 순서를 바꾼다 (드래그가 안 되는 환경을 위한 대안 경로).
+        function moveSortPriorityItem(idx, direction) {
+            const newIdx = idx + direction;
+            if (newIdx < 0 || newIdx >= sortPriorityOrder.length) return;
+            const temp = sortPriorityOrder[idx];
+            sortPriorityOrder[idx] = sortPriorityOrder[newIdx];
+            sortPriorityOrder[newIdx] = temp;
+            renderSortPriorityList();
+            applySortPriorityChange();
+        }
+
+        // 우선순위 순서가 바뀐 뒤 공통으로 처리할 저장 + 재정렬 로직.
+        function applySortPriorityChange() {
+            scheduleAutoSave();
+            if (currentSortMode === 'workTypeOrder' || (document.getElementById('photoSortSelect') && document.getElementById('photoSortSelect').value === 'workTypeOrder')) {
+                sortPhotos('workTypeOrder');
             }
         }
 
@@ -6395,6 +6433,7 @@
         }
 
         function clearPhotoFilter() {
+            clearTimeout(photoFilterDebounceTimer);
             const searchInput = document.getElementById('photoSearchInput');
             const dateFrom = document.getElementById('photoSearchDateFrom');
             const dateTo = document.getElementById('photoSearchDateTo');

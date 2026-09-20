@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>토목 현장 사진대지 작성 프로그램 V7.3</title>
+    <title>토목 현장 사진대지 작성 프로그램 V7.4</title>
 
     <!-- ===== PWA: Web App Manifest & Favicons ===== -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='512' height='512' viewBox='0 0 512 512'><rect width='512' height='512' rx='100' fill='%230f172a'/><circle cx='256' cy='256' r='220' fill='%231e293b'/><path d='M256 110 C160 110 110 180 110 250 L402 250 C402 180 352 110 256 110 Z' fill='%23f59e0b'/><rect x='80' y='240' width='352' height='32' rx='10' fill='%23d97706'/><rect x='236' y='110' width='40' height='140' fill='%23fbbf24'/><path d='M160 300 H352 V410 H160 Z' fill='%23ffffff' opacity='0.9'/><path d='M180 320 L240 370 L290 335 L332 375 H180 Z' fill='%230f172a'/><circle cx='310' cy='330' r='14' fill='%23f59e0b'/></svg>">
@@ -527,7 +527,7 @@
                     <h1 class="font-black text-lg leading-tight flex items-center gap-2 text-slate-100 tracking-tight truncate">
                         토목 현장 사진대지 작성기
                         <span class="hidden md:inline text-[10px] bg-amber-500/20 text-amber-400 border border-amber-500/40 px-2 py-0.5 rounded-full font-bold tracking-wider uppercase shrink-0">Pro Ultimate</span>
-                        <span class="hidden md:inline text-[10px] bg-slate-700/60 text-slate-300 border border-slate-600/60 px-2 py-0.5 rounded-full font-bold tracking-wider shrink-0">V7.3</span>
+                        <span class="hidden md:inline text-[10px] bg-slate-700/60 text-slate-300 border border-slate-600/60 px-2 py-0.5 rounded-full font-bold tracking-wider shrink-0">V7.4</span>
                     </h1>
                     <p class="hidden sm:block text-[11px] text-slate-400 font-medium truncate">Civil Engineering Site Photo Sheet Generator</p>
                 </div>
@@ -6534,6 +6534,9 @@
         // 페이지 축소판 내비게이터: 사진이 있는 본문 페이지 수만큼 번호 버튼을 만들고,
         // 클릭하면 해당 페이지로 부드럽게 스크롤한다. 표지·목차·위치도 페이지는 대상이 아니다.
         let pageNavigatorCollapsed = false;
+        let pageNavigatorObserver = null;
+        let currentVisiblePageIdx = 0;
+
         function renderPageNavigator(totalPages) {
             const navEl = document.getElementById('pageNavigator');
             const listEl = document.getElementById('pageNavigatorList');
@@ -6542,21 +6545,70 @@
             // 페이지가 2장 이하면(스크롤할 필요가 거의 없으면) 내비게이터를 숨긴다.
             if (!totalPages || totalPages <= 2) {
                 navEl.classList.add('hidden');
+                if (pageNavigatorObserver) { pageNavigatorObserver.disconnect(); pageNavigatorObserver = null; }
                 return;
             }
             navEl.classList.remove('hidden');
 
             listEl.innerHTML = Array.from({ length: totalPages }, (_, idx) => `
-                <button onclick="scrollToPage(${idx})" title="${idx + 1}페이지로 이동"
-                    class="page-nav-btn ${pageNavigatorCollapsed ? 'w-2.5 h-2.5' : 'w-7 h-7 text-[10px]'} shrink-0 flex items-center justify-center bg-white/90 hover:bg-amber-100 border border-slate-300 rounded-lg shadow-sm font-bold text-slate-600 transition">
+                <button onclick="scrollToPage(${idx})" data-page-idx="${idx}" title="${idx + 1}페이지로 이동"
+                    class="page-nav-btn ${pageNavigatorCollapsed ? 'w-3 h-3' : 'w-8 h-7 text-[10px]'} shrink-0 flex items-center justify-center bg-white/90 hover:bg-amber-100 border border-slate-300 rounded-lg shadow-sm font-bold text-slate-600 transition">
                     ${pageNavigatorCollapsed ? '' : idx + 1}
                 </button>
             `).join('');
+
+            setupPageNavigatorObserver(totalPages);
+            highlightActivePageButton(currentVisiblePageIdx);
+        }
+
+        // 지금 화면에 보이는 페이지를 감지해서, 우측 내비게이터에서 그 번호를 강조 표시한다.
+        // ("내가 지금 몇 페이지를 보고 있는지" 한눈에 알 수 있게 하기 위함)
+        function setupPageNavigatorObserver(totalPages) {
+            if (pageNavigatorObserver) pageNavigatorObserver.disconnect();
+            if (typeof IntersectionObserver === 'undefined') return;
+
+            pageNavigatorObserver = new IntersectionObserver((entries) => {
+                // 화면(뷰포트) 안에 가장 많이 걸쳐 보이는 페이지를 "현재 페이지"로 판단한다.
+                let bestEntry = null;
+                entries.forEach(entry => {
+                    if (entry.isIntersecting && (!bestEntry || entry.intersectionRatio > bestEntry.intersectionRatio)) {
+                        bestEntry = entry;
+                    }
+                });
+                if (bestEntry) {
+                    const idx = parseInt(bestEntry.target.dataset.pageIndex, 10);
+                    if (!isNaN(idx)) {
+                        currentVisiblePageIdx = idx;
+                        highlightActivePageButton(idx);
+                    }
+                }
+            }, { threshold: [0.3, 0.5, 0.7] });
+
+            for (let i = 0; i < totalPages; i++) {
+                const pageEl = document.getElementById(`a4-page-${i}`);
+                if (pageEl) pageNavigatorObserver.observe(pageEl);
+            }
+        }
+
+        function highlightActivePageButton(idx) {
+            const listEl = document.getElementById('pageNavigatorList');
+            if (!listEl) return;
+            listEl.querySelectorAll('.page-nav-btn').forEach(btn => {
+                const isActive = parseInt(btn.dataset.pageIdx, 10) === idx;
+                btn.classList.toggle('bg-amber-500', isActive);
+                btn.classList.toggle('text-white', isActive);
+                btn.classList.toggle('border-amber-500', isActive);
+                btn.classList.toggle('bg-white/90', !isActive);
+                btn.classList.toggle('text-slate-600', !isActive);
+                btn.classList.toggle('border-slate-300', !isActive);
+            });
         }
 
         function scrollToPage(pageIdx) {
             const target = document.getElementById(`a4-page-${pageIdx}`);
             if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            currentVisiblePageIdx = pageIdx;
+            highlightActivePageButton(pageIdx);
         }
 
         function togglePageNavigatorCollapse() {

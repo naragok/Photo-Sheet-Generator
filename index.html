@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>토목 현장 사진대지 작성 프로그램 V6.5</title>
+    <title>토목 현장 사진대지 작성 프로그램 V6.8</title>
 
     <!-- ===== PWA: Web App Manifest & Favicons ===== -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='512' height='512' viewBox='0 0 512 512'><rect width='512' height='512' rx='100' fill='%230f172a'/><circle cx='256' cy='256' r='220' fill='%231e293b'/><path d='M256 110 C160 110 110 180 110 250 L402 250 C402 180 352 110 256 110 Z' fill='%23f59e0b'/><rect x='80' y='240' width='352' height='32' rx='10' fill='%23d97706'/><rect x='236' y='110' width='40' height='140' fill='%23fbbf24'/><path d='M160 300 H352 V410 H160 Z' fill='%23ffffff' opacity='0.9'/><path d='M180 320 L240 370 L290 335 L332 375 H180 Z' fill='%230f172a'/><circle cx='310' cy='330' r='14' fill='%23f59e0b'/></svg>">
@@ -527,7 +527,7 @@
                     <h1 class="font-black text-lg leading-tight flex items-center gap-2 text-slate-100 tracking-tight truncate">
                         토목 현장 사진대지 작성기
                         <span class="hidden md:inline text-[10px] bg-amber-500/20 text-amber-400 border border-amber-500/40 px-2 py-0.5 rounded-full font-bold tracking-wider uppercase shrink-0">Pro Ultimate</span>
-                        <span class="hidden md:inline text-[10px] bg-slate-700/60 text-slate-300 border border-slate-600/60 px-2 py-0.5 rounded-full font-bold tracking-wider shrink-0">V6.5</span>
+                        <span class="hidden md:inline text-[10px] bg-slate-700/60 text-slate-300 border border-slate-600/60 px-2 py-0.5 rounded-full font-bold tracking-wider shrink-0">V6.8</span>
                     </h1>
                     <p class="hidden sm:block text-[11px] text-slate-400 font-medium truncate">Civil Engineering Site Photo Sheet Generator</p>
                 </div>
@@ -1441,11 +1441,14 @@
                         </p>
                         <span class="text-[10px] text-slate-400 font-medium">이름 클릭 시 적용</span>
                     </div>
+                    <div class="px-5 pb-2 shrink-0">
+                        <input type="text" id="workTypeSearchInput" oninput="renderWorkTypeChips()" placeholder="공정 검색..." class="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-[11px] outline-none focus:ring-2 focus:ring-teal-500/40">
+                    </div>
                     <div id="workTypeChipList" class="flex-1 overflow-y-auto px-5 space-y-1.5 min-h-[36px]">
                     </div>
                     <div class="p-5 pt-3 shrink-0">
                         <div class="flex gap-2">
-                            <input type="text" id="newWorkTypeInput" placeholder="새 공정명 입력 (예: 배수관로공사)" class="flex-1 min-w-0 px-3 py-2 border border-slate-300 rounded-xl text-xs outline-none focus:ring-2 focus:ring-teal-500/50">
+                            <input type="text" id="newWorkTypeInput" placeholder="새 공정명 입력 (예: 배수관로공사)" onkeydown="if(event.key==='Enter'){addNewWorkType();}" class="flex-1 min-w-0 px-3 py-2 border border-slate-300 rounded-xl text-xs outline-none focus:ring-2 focus:ring-teal-500/50">
                             <button onclick="addNewWorkType()" class="px-3.5 py-2 bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs rounded-xl shadow transition shrink-0">
                                 공정 추가
                             </button>
@@ -1460,11 +1463,14 @@
                             <i class="fa-solid fa-comment-dots text-purple-500"></i> 표준 문구 (내용란에 적용)
                         </p>
                     </div>
+                    <div class="px-5 pb-2 shrink-0">
+                        <input type="text" id="phraseSearchInput" oninput="renderPhraseList()" placeholder="문구 검색..." class="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-[11px] outline-none focus:ring-2 focus:ring-purple-500/40">
+                    </div>
                     <div id="phraseList" class="flex-1 overflow-y-auto px-5 space-y-2 min-h-[80px]">
                     </div>
                     <div class="p-5 pt-3 shrink-0">
                         <div class="flex gap-2">
-                            <input type="text" id="newPhraseInput" placeholder="새 표준 문구 입력..." class="flex-1 min-w-0 px-3 py-2 border border-slate-300 rounded-xl text-xs outline-none focus:ring-2 focus:ring-purple-500/50">
+                            <input type="text" id="newPhraseInput" placeholder="새 표준 문구 입력..." onkeydown="if(event.key==='Enter'){addNewPhrase();}" class="flex-1 min-w-0 px-3 py-2 border border-slate-300 rounded-xl text-xs outline-none focus:ring-2 focus:ring-purple-500/50">
                             <button onclick="addNewPhrase()" class="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs rounded-xl shadow transition shrink-0">
                                 문구 추가
                             </button>
@@ -1648,11 +1654,58 @@
                 </button>
             </div>
             <p class="text-[11px] text-slate-400 font-medium mb-3 shrink-0">여러 현장을 이름별로 저장하고 언제든 불러올 수 있습니다.</p>
+
+            <div class="shrink-0 mb-3 bg-slate-50 border border-slate-200 rounded-xl p-2.5">
+                <button onclick="toggleGithubConfigBox()" class="w-full flex items-center justify-between text-xs font-bold text-slate-600">
+                    <span class="flex items-center gap-1.5"><i class="fa-brands fa-github"></i> GitHub 연동 (다른 컴퓨터와 공유)</span>
+                    <i id="githubConfigChevron" class="fa-solid fa-chevron-down text-[10px]"></i>
+                </button>
+                <div id="githubConfigBox" class="hidden mt-2 space-y-1.5">
+                    <p class="text-[10px] text-slate-400 leading-snug">
+                        GitHub 저장소 <code class="bg-slate-200 px-1 rounded">naragok/pmang-data</code>의
+                        <code class="bg-slate-200 px-1 rounded">photo-sheet/</code> 폴더에 저장됩니다.
+                        <a href="https://github.com/settings/tokens/new?description=photo-sheet-app&scopes=repo" target="_blank" class="text-blue-600 underline">Personal Access Token 발급받기</a>
+                    </p>
+                    <input type="password" id="githubTokenInput" placeholder="GitHub Personal Access Token (ghp_...)" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs outline-none focus:ring-2 focus:ring-slate-500/40">
+                    <div class="flex gap-1.5">
+                        <button onclick="saveGithubToken()" class="flex-1 py-1.5 bg-slate-800 hover:bg-slate-700 text-white font-bold text-[11px] rounded-lg transition">토큰 저장</button>
+                        <button onclick="clearGithubToken()" class="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-600 font-bold text-[11px] rounded-lg transition">토큰 삭제</button>
+                    </div>
+                    <p id="githubTokenStatus" class="text-[10px] text-slate-400"></p>
+                </div>
+            </div>
+
+            <div class="flex gap-1.5 shrink-0 mb-3">
+                <button onclick="uploadCurrentProjectToGithub()" class="flex-1 py-1.5 bg-slate-800 hover:bg-slate-700 text-white font-bold text-[11px] rounded-lg transition flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-cloud-arrow-up"></i> GitHub에 업로드
+                </button>
+                <button onclick="openGithubProjectList()" class="flex-1 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[11px] rounded-lg transition flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-cloud-arrow-down"></i> GitHub에서 불러오기
+                </button>
+            </div>
+
             <div id="projectStoreList" class="flex-1 overflow-y-auto space-y-1.5 min-h-[80px]">
             </div>
             <button onclick="saveToProjectStore()" class="mt-3 w-full py-2 bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs rounded-xl shadow transition flex items-center justify-center gap-1.5 shrink-0">
                 <i class="fa-solid fa-plus"></i> 현재 작업을 새로 저장
             </button>
+        </div>
+    </div>
+
+    <!-- GitHub Project List Modal -->
+    <div id="githubListModal" class="fixed inset-0 bg-slate-950/75 z-[60] hidden items-center justify-center backdrop-blur-sm no-print p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-5 max-h-[80vh] flex flex-col">
+            <div class="flex items-center justify-between mb-3 border-b border-slate-100 pb-2.5 shrink-0">
+                <h3 class="font-extrabold text-sm text-slate-800 flex items-center gap-2">
+                    <i class="fa-brands fa-github"></i> GitHub에 저장된 현장
+                </h3>
+                <button onclick="closeGithubListModal()" class="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div id="githubListContent" class="flex-1 overflow-y-auto space-y-1.5 min-h-[100px]">
+                <div class="text-xs text-slate-400 text-center py-6"><i class="fa-solid fa-spinner fa-spin"></i> 불러오는 중...</div>
+            </div>
         </div>
     </div>
 
@@ -2593,6 +2646,232 @@
             }
         }
 
+        // ===================== GitHub 연동 (다른 컴퓨터와 현장 데이터 공유) =====================
+        // 저장소는 naragok/pmang-data 고정, 그 안의 photo-sheet/ 폴더에 현장별로 파일 하나씩 저장한다.
+        // 토큰은 프로젝트 데이터와 분리해 localStorage에만 보관하고, JSON/HTML 내보내기에는 포함하지 않는다.
+        const GITHUB_OWNER = 'naragok';
+        const GITHUB_REPO = 'pmang-data';
+        const GITHUB_FOLDER = 'photo-sheet';
+        const GITHUB_TOKEN_KEY = 'photoSheetGithubToken';
+
+        function getGithubToken() {
+            return localStorage.getItem(GITHUB_TOKEN_KEY) || '';
+        }
+
+        function saveGithubToken() {
+            const input = document.getElementById('githubTokenInput');
+            const token = input ? input.value.trim() : '';
+            if (!token) {
+                showToast("토큰을 입력해 주세요.");
+                return;
+            }
+            localStorage.setItem(GITHUB_TOKEN_KEY, token);
+            if (input) input.value = '';
+            updateGithubTokenStatus();
+            showToast("GitHub 토큰이 저장되었습니다. (이 컴퓨터에만 보관됩니다)");
+        }
+
+        function clearGithubToken() {
+            localStorage.removeItem(GITHUB_TOKEN_KEY);
+            updateGithubTokenStatus();
+            showToast("GitHub 토큰이 삭제되었습니다.");
+        }
+
+        function updateGithubTokenStatus() {
+            const statusEl = document.getElementById('githubTokenStatus');
+            if (!statusEl) return;
+            statusEl.textContent = getGithubToken()
+                ? '✓ 토큰이 등록되어 있습니다.'
+                : '토큰이 등록되어 있지 않습니다. 업로드/불러오기 전에 먼저 등록해 주세요.';
+        }
+
+        function toggleGithubConfigBox() {
+            const box = document.getElementById('githubConfigBox');
+            const chevron = document.getElementById('githubConfigChevron');
+            if (!box) return;
+            const willShow = box.classList.contains('hidden');
+            box.classList.toggle('hidden');
+            if (chevron) chevron.classList.toggle('fa-chevron-down', !willShow);
+            if (chevron) chevron.classList.toggle('fa-chevron-up', willShow);
+            if (willShow) updateGithubTokenStatus();
+        }
+
+        // GitHub REST API 공통 호출. path는 저장소 루트 기준 상대경로.
+        async function githubApiFetch(path, options = {}) {
+            const token = getGithubToken();
+            if (!token) {
+                showToast("먼저 GitHub 토큰을 등록해 주세요. (현장별 저장함 > GitHub 연동)");
+                throw new Error('NO_TOKEN');
+            }
+            const res = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${path}`, {
+                ...options,
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/vnd.github+json',
+                    ...(options.headers || {})
+                }
+            });
+            return res;
+        }
+
+        // UTF-8 문자열을 base64로 안전하게 인코딩 (한글 등 멀티바이트 문자 포함)
+        function utf8ToBase64(str) {
+            return btoa(unescape(encodeURIComponent(str)));
+        }
+        function base64ToUtf8(b64) {
+            return decodeURIComponent(escape(atob(b64)));
+        }
+
+        async function uploadCurrentProjectToGithub() {
+            const currentName = document.getElementById('globalSiteName') ? document.getElementById('globalSiteName').value.trim() : siteName;
+            const input = window.prompt("GitHub에 업로드할 현장(파일) 이름을 입력하세요", currentName || '현장');
+            if (input === null) return;
+            const projectName = (input.trim() || currentName || '현장').replace(/[\\/:*?"<>|]/g, '_');
+            const filePath = `${GITHUB_FOLDER}/${encodeURIComponent(projectName)}.json`;
+
+            showToast("GitHub에 업로드 중입니다...");
+            try {
+                const data = collectCurrentData();
+                const content = utf8ToBase64(JSON.stringify(data));
+
+                // 이미 같은 이름 파일이 있으면 sha를 함께 보내야 "업데이트"로 처리된다 (없으면 새로 생성).
+                let sha = undefined;
+                const existing = await githubApiFetch(filePath);
+                if (existing.status === 200) {
+                    const existingJson = await existing.json();
+                    sha = existingJson.sha;
+                } else if (existing.status !== 404) {
+                    throw new Error(`조회 실패 (${existing.status})`);
+                }
+
+                const putRes = await githubApiFetch(filePath, {
+                    method: 'PUT',
+                    body: JSON.stringify({
+                        message: `사진대지 업로드: ${projectName} (${new Date().toLocaleString('ko-KR')})`,
+                        content: content,
+                        ...(sha ? { sha } : {})
+                    })
+                });
+
+                if (!putRes.ok) {
+                    const errJson = await putRes.json().catch(() => ({}));
+                    throw new Error(errJson.message || `업로드 실패 (${putRes.status})`);
+                }
+
+                showToast(`"${projectName}" 현장을 GitHub에 업로드했습니다.`);
+            } catch (err) {
+                if (err.message !== 'NO_TOKEN') {
+                    showToast(`GitHub 업로드 실패: ${err.message}`);
+                }
+            }
+        }
+
+        async function openGithubProjectList() {
+            const modal = document.getElementById('githubListModal');
+            const contentEl = document.getElementById('githubListContent');
+            if (!modal || !contentEl) return;
+
+            if (!getGithubToken()) {
+                showToast("먼저 GitHub 토큰을 등록해 주세요. (현장별 저장함 > GitHub 연동)");
+                return;
+            }
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            contentEl.innerHTML = `<div class="text-xs text-slate-400 text-center py-6"><i class="fa-solid fa-spinner fa-spin"></i> 불러오는 중...</div>`;
+
+            try {
+                const res = await githubApiFetch(GITHUB_FOLDER);
+                if (res.status === 404) {
+                    contentEl.innerHTML = `<div class="text-xs text-slate-400 text-center py-6">GitHub에 저장된 현장이 아직 없습니다.<br>먼저 "GitHub에 업로드"로 올려보세요.</div>`;
+                    return;
+                }
+                if (!res.ok) throw new Error(`목록 조회 실패 (${res.status})`);
+
+                const files = await res.json();
+                const jsonFiles = (Array.isArray(files) ? files : []).filter(f => f.name.endsWith('.json'));
+
+                if (jsonFiles.length === 0) {
+                    contentEl.innerHTML = `<div class="text-xs text-slate-400 text-center py-6">GitHub에 저장된 현장이 아직 없습니다.</div>`;
+                    return;
+                }
+
+                contentEl.innerHTML = jsonFiles.map(f => {
+                    const displayName = decodeURIComponent(f.name.replace(/\.json$/, ''));
+                    const sizeKB = Math.round(f.size / 1024);
+                    return `
+                        <div class="flex items-center justify-between gap-2 px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs">
+                            <div class="flex-1 min-w-0">
+                                <div class="font-bold text-slate-800 truncate">${escapeHtml(displayName)}</div>
+                                <div class="text-slate-400 text-[10px]">약 ${sizeKB}KB</div>
+                            </div>
+                            <div class="flex gap-1 shrink-0">
+                                <button onclick="loadFromGithub('${escapeHtml(f.name).replace(/'/g, "\\'")}', '${escapeHtml(displayName).replace(/'/g, "\\'")}')" title="불러오기" class="w-7 h-7 flex items-center justify-center bg-blue-600 hover:bg-blue-500 text-white rounded-lg"><i class="fa-solid fa-download text-xs"></i></button>
+                                <button onclick="deleteFromGithub('${escapeHtml(f.name).replace(/'/g, "\\'")}', '${escapeHtml(displayName).replace(/'/g, "\\'")}')" title="GitHub에서 삭제" class="w-7 h-7 flex items-center justify-center bg-rose-600 hover:bg-rose-500 text-white rounded-lg"><i class="fa-solid fa-trash text-xs"></i></button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (err) {
+                if (err.message !== 'NO_TOKEN') {
+                    contentEl.innerHTML = `<div class="text-xs text-rose-500 text-center py-6">불러오기 실패: ${escapeHtml(err.message)}</div>`;
+                }
+            }
+        }
+
+        function closeGithubListModal() {
+            const modal = document.getElementById('githubListModal');
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
+        }
+
+        async function loadFromGithub(fileName, displayName) {
+            const filePath = `${GITHUB_FOLDER}/${fileName}`;
+            showToast("GitHub에서 불러오는 중입니다...");
+            try {
+                const res = await githubApiFetch(filePath);
+                if (!res.ok) throw new Error(`불러오기 실패 (${res.status})`);
+                const json = await res.json();
+                const data = JSON.parse(base64ToUtf8(json.content));
+                applyLoadedData(data);
+                closeGithubListModal();
+                showToast(`"${displayName}" 현장을 GitHub에서 불러왔습니다.`);
+            } catch (err) {
+                if (err.message !== 'NO_TOKEN') {
+                    showToast(`GitHub 불러오기 실패: ${err.message}`);
+                }
+            }
+        }
+
+        async function deleteFromGithub(fileName, displayName) {
+            if (!window.confirm(`GitHub에서 "${displayName}" 파일을 삭제할까요?\n(다른 컴퓨터에서도 더 이상 불러올 수 없게 됩니다)`)) return;
+            const filePath = `${GITHUB_FOLDER}/${fileName}`;
+            try {
+                const getRes = await githubApiFetch(filePath);
+                if (!getRes.ok) throw new Error(`조회 실패 (${getRes.status})`);
+                const fileJson = await getRes.json();
+
+                const delRes = await githubApiFetch(filePath, {
+                    method: 'DELETE',
+                    body: JSON.stringify({
+                        message: `사진대지 삭제: ${displayName}`,
+                        sha: fileJson.sha
+                    })
+                });
+                if (!delRes.ok) throw new Error(`삭제 실패 (${delRes.status})`);
+
+                showToast(`"${displayName}"이(가) GitHub에서 삭제되었습니다.`);
+                openGithubProjectList();
+            } catch (err) {
+                if (err.message !== 'NO_TOKEN') {
+                    showToast(`GitHub 삭제 실패: ${err.message}`);
+                }
+            }
+        }
+        // ===================== GitHub 연동 끝 =====================
+
         async function saveToProjectStore() {
             const currentName = document.getElementById('globalSiteName') ? document.getElementById('globalSiteName').value.trim() : siteName;
             const input = window.prompt("저장함에 저장할 현장(프로젝트) 이름을 입력하세요", currentName);
@@ -2737,7 +3016,22 @@
         function renderWorkTypeChips() {
             const listEl = document.getElementById('workTypeChipList');
             if (!listEl) return;
-            listEl.innerHTML = standardWorkTypes.map((wt, idx) => {
+
+            const searchInput = document.getElementById('workTypeSearchInput');
+            const keyword = searchInput ? searchInput.value.trim().toLowerCase() : '';
+
+            const visibleEntries = standardWorkTypes
+                .map((wt, idx) => ({ wt, idx }))
+                .filter(({ wt }) => !keyword || wt.name.toLowerCase().includes(keyword));
+
+            if (visibleEntries.length === 0) {
+                listEl.innerHTML = keyword
+                    ? `<p class="text-[11px] text-slate-400 py-2 text-center">"${escapeHtml(keyword)}"와(과) 일치하는 공정이 없습니다.</p>`
+                    : `<p class="text-[11px] text-slate-400 py-2 text-center">등록된 공정이 없습니다. 아래에서 추가해 보세요.</p>`;
+                return;
+            }
+
+            listEl.innerHTML = visibleEntries.map(({ wt, idx }) => {
                 const subTypes = wt.subTypes || [];
                 if (editingWorkTypeIdx === idx) {
                     return `
@@ -2790,7 +3084,7 @@
                         ` : ''}
                     </div>
                 `;
-            }).join('') || `<p class="text-[11px] text-slate-400 py-2">등록된 공정이 없습니다. 아래에서 추가해 보세요.</p>`;
+            }).join('');
 
             if (editingWorkTypeIdx !== null) {
                 const inputEl = document.getElementById(`editWorkTypeInput_${editingWorkTypeIdx}`);
@@ -3001,15 +3295,92 @@
             }
         }
 
+        let editingPhraseIdx = null;
+
         function renderPhraseList() {
             const listEl = document.getElementById('phraseList');
             if (!listEl) return;
-            listEl.innerHTML = standardPhrases.map((phrase, idx) => `
-                <div class="flex items-center justify-between gap-2 p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs hover:bg-purple-50 hover:border-purple-200 transition">
-                    <button type="button" onclick="applyPhraseToCard(${idx})" title="클릭하여 현재 사진 카드에 적용" class="flex-1 text-left font-medium text-slate-800 hover:text-purple-700">${escapeHtml(phrase)}</button>
-                    <button onclick="deletePhrase(${idx})" title="문구 삭제" class="w-6 h-6 flex items-center justify-center text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-md shrink-0"><i class="fa-solid fa-xmark"></i></button>
-                </div>
-            `).join('');
+
+            const searchInput = document.getElementById('phraseSearchInput');
+            const keyword = searchInput ? searchInput.value.trim().toLowerCase() : '';
+
+            const visibleEntries = standardPhrases
+                .map((phrase, idx) => ({ phrase, idx }))
+                .filter(({ phrase }) => !keyword || phrase.toLowerCase().includes(keyword));
+
+            if (visibleEntries.length === 0) {
+                listEl.innerHTML = keyword
+                    ? `<p class="text-[11px] text-slate-400 py-2 text-center">"${escapeHtml(keyword)}"와(과) 일치하는 문구가 없습니다.</p>`
+                    : `<p class="text-[11px] text-slate-400 py-2 text-center">등록된 문구가 없습니다. 아래에서 추가해 보세요.</p>`;
+                return;
+            }
+
+            listEl.innerHTML = visibleEntries.map(({ phrase, idx }) => {
+                if (editingPhraseIdx === idx) {
+                    return `
+                        <div class="flex items-center gap-2 p-2 bg-purple-50 border border-purple-300 ring-2 ring-purple-300 rounded-xl text-xs">
+                            <input type="text" id="editPhraseInput_${idx}" value="${escapeHtml(phrase)}"
+                                   onkeydown="if(event.key==='Enter'){savePhraseEdit(${idx});} else if(event.key==='Escape'){cancelPhraseEdit();}"
+                                   class="flex-1 min-w-0 px-2 py-1 border border-purple-300 rounded-lg outline-none font-medium text-purple-900 bg-white">
+                            <div class="flex items-center gap-0.5 shrink-0">
+                                <button onclick="savePhraseEdit(${idx})" title="저장" class="w-6 h-6 flex items-center justify-center text-emerald-600 hover:text-emerald-800"><i class="fa-solid fa-check text-[10px]"></i></button>
+                                <button onclick="cancelPhraseEdit()" title="취소" class="w-6 h-6 flex items-center justify-center text-slate-400 hover:text-rose-600"><i class="fa-solid fa-xmark text-[10px]"></i></button>
+                            </div>
+                        </div>
+                    `;
+                }
+                return `
+                    <div class="flex items-center justify-between gap-1 p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs hover:bg-purple-50 hover:border-purple-200 transition">
+                        <button type="button" onclick="applyPhraseToCard(${idx})" title="클릭하여 현재 사진 카드에 적용" class="flex-1 min-w-0 text-left font-medium text-slate-800 hover:text-purple-700 truncate">${escapeHtml(phrase)}</button>
+                        <div class="flex items-center gap-0.5 shrink-0">
+                            <button onclick="startPhraseEdit(${idx})" title="문구 수정" class="w-6 h-6 flex items-center justify-center text-slate-400 hover:text-purple-700 hover:bg-purple-100 rounded-md"><i class="fa-solid fa-pen text-[10px]"></i></button>
+                            <button onclick="movePhrase(${idx}, -1)" title="순서 위로" ${idx === 0 ? 'disabled' : ''} class="w-6 h-6 flex items-center justify-center text-slate-400 hover:text-purple-700 hover:bg-purple-100 rounded-md disabled:opacity-20 disabled:cursor-not-allowed"><i class="fa-solid fa-chevron-up text-[10px]"></i></button>
+                            <button onclick="movePhrase(${idx}, 1)" title="순서 아래로" ${idx === standardPhrases.length - 1 ? 'disabled' : ''} class="w-6 h-6 flex items-center justify-center text-slate-400 hover:text-purple-700 hover:bg-purple-100 rounded-md disabled:opacity-20 disabled:cursor-not-allowed"><i class="fa-solid fa-chevron-down text-[10px]"></i></button>
+                            <button onclick="deletePhrase(${idx})" title="문구 삭제" class="w-6 h-6 flex items-center justify-center text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-md"><i class="fa-solid fa-xmark text-[10px]"></i></button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            if (editingPhraseIdx !== null) {
+                const inputEl = document.getElementById(`editPhraseInput_${editingPhraseIdx}`);
+                if (inputEl) { inputEl.focus(); inputEl.select(); }
+            }
+        }
+
+        function startPhraseEdit(idx) {
+            editingPhraseIdx = idx;
+            renderPhraseList();
+        }
+
+        function cancelPhraseEdit() {
+            editingPhraseIdx = null;
+            renderPhraseList();
+        }
+
+        function savePhraseEdit(idx) {
+            const inputEl = document.getElementById(`editPhraseInput_${idx}`);
+            if (!inputEl) return;
+            const newValue = inputEl.value.trim();
+            if (!newValue) {
+                showToast("문구 내용을 입력해 주세요.");
+                return;
+            }
+            standardPhrases[idx] = newValue;
+            editingPhraseIdx = null;
+            renderPhraseList();
+            scheduleAutoSave();
+            showToast("문구가 수정되었습니다.");
+        }
+
+        function movePhrase(idx, direction) {
+            const newIdx = idx + direction;
+            if (newIdx < 0 || newIdx >= standardPhrases.length) return;
+            const temp = standardPhrases[idx];
+            standardPhrases[idx] = standardPhrases[newIdx];
+            standardPhrases[newIdx] = temp;
+            renderPhraseList();
+            scheduleAutoSave();
         }
 
         function applyPhraseToCard(idx) {
@@ -3049,16 +3420,19 @@
             standardPhrases.push(input.value.trim());
             input.value = '';
             renderPhraseList();
+            scheduleAutoSave();
             showToast("새 표준 문구가 보관함에 추가되었습니다.");
         }
 
         function deletePhrase(idx) {
             standardPhrases.splice(idx, 1);
+            if (editingPhraseIdx === idx) editingPhraseIdx = null;
             renderPhraseList();
+            scheduleAutoSave();
         }
 
         function isAnyModalOpen() {
-            const modalIds = ['settingsModal', 'phraseModal', 'siteMapPinModal', 'batchWorkTypeModal', 'blankPageCountModal', 'statsModal', 'customConfirmModal', 'projectStorePanel', 'missingFieldModal', 'pwaGuideModal', 'annotationModal'];
+            const modalIds = ['settingsModal', 'phraseModal', 'siteMapPinModal', 'batchWorkTypeModal', 'blankPageCountModal', 'statsModal', 'customConfirmModal', 'projectStorePanel', 'missingFieldModal', 'pwaGuideModal', 'annotationModal', 'subTypePickModal', 'moveToIndexModal', 'githubListModal'];
             return modalIds.some(id => {
                 const el = document.getElementById(id);
                 return el && !el.classList.contains('hidden');
@@ -3141,8 +3515,14 @@
                 return;
             }
 
+            // 위치/내용 등 입력칸에 커서가 남아있는 상태로 화면에 파일을 드롭해도
+            // 조용히 무시하지 않는다. 포커스만 해제하고 정상적으로 사진을 등록한다.
+            // (예전에는 여기서 그냥 return 해버려서 "가끔 드래그가 안 먹힌다"는
+            //  현상의 실제 원인이 되었다 - 사실은 입력칸 포커스 때문에 씹혔던 것)
             const activeTag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
-            if (activeTag === 'input' || activeTag === 'textarea') return;
+            if (activeTag === 'input' || activeTag === 'textarea') {
+                document.activeElement.blur();
+            }
 
             // 특정 사진 카드의 이미지 슬롯 위에 바로 놓은 경우, 그 슬롯에 등록한다.
             if (zone) {

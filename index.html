@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>토목 현장 사진대지 작성 프로그램 V6.8</title>
+    <title>토목 현장 사진대지 작성 프로그램 V7.0</title>
 
     <!-- ===== PWA: Web App Manifest & Favicons ===== -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='512' height='512' viewBox='0 0 512 512'><rect width='512' height='512' rx='100' fill='%230f172a'/><circle cx='256' cy='256' r='220' fill='%231e293b'/><path d='M256 110 C160 110 110 180 110 250 L402 250 C402 180 352 110 256 110 Z' fill='%23f59e0b'/><rect x='80' y='240' width='352' height='32' rx='10' fill='%23d97706'/><rect x='236' y='110' width='40' height='140' fill='%23fbbf24'/><path d='M160 300 H352 V410 H160 Z' fill='%23ffffff' opacity='0.9'/><path d='M180 320 L240 370 L290 335 L332 375 H180 Z' fill='%230f172a'/><circle cx='310' cy='330' r='14' fill='%23f59e0b'/></svg>">
@@ -527,7 +527,7 @@
                     <h1 class="font-black text-lg leading-tight flex items-center gap-2 text-slate-100 tracking-tight truncate">
                         토목 현장 사진대지 작성기
                         <span class="hidden md:inline text-[10px] bg-amber-500/20 text-amber-400 border border-amber-500/40 px-2 py-0.5 rounded-full font-bold tracking-wider uppercase shrink-0">Pro Ultimate</span>
-                        <span class="hidden md:inline text-[10px] bg-slate-700/60 text-slate-300 border border-slate-600/60 px-2 py-0.5 rounded-full font-bold tracking-wider shrink-0">V6.8</span>
+                        <span class="hidden md:inline text-[10px] bg-slate-700/60 text-slate-300 border border-slate-600/60 px-2 py-0.5 rounded-full font-bold tracking-wider shrink-0">V7.0</span>
                     </h1>
                     <p class="hidden sm:block text-[11px] text-slate-400 font-medium truncate">Civil Engineering Site Photo Sheet Generator</p>
                 </div>
@@ -1607,12 +1607,35 @@
             <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">공종별 사진 분포</p>
             <div id="statsWorkTypeChart" class="space-y-1.5 mb-4"></div>
 
-            <div class="grid grid-cols-2 gap-2">
+            <div class="bg-indigo-50 border border-indigo-200 rounded-xl p-3 mb-4">
+                <p class="text-[11px] font-bold text-indigo-700 uppercase tracking-wide mb-1 flex items-center gap-1.5">
+                    <i class="fa-solid fa-compress"></i> 등록된 사진 일괄 최적화
+                </p>
+                <p class="text-[10px] text-indigo-500 mb-2 leading-snug">
+                    이미 등록해둔 사진들을 지금 다시 압축해 용량을 줄입니다. 화면에 보이는 크기는 그대로이고, 저장 파일 용량만 줄어듭니다.
+                </p>
+                <div class="flex items-center gap-2">
+                    <select id="optimizeQualitySelect" class="flex-1 px-2 py-1.5 border border-indigo-200 rounded-lg text-[11px] font-bold text-indigo-700 bg-white outline-none">
+                        <option value="normal">보통 (긴 변 1600px)</option>
+                        <option value="low">저용량 (긴 변 1000px)</option>
+                        <option value="high">고화질 (긴 변 2400px)</option>
+                    </select>
+                    <button onclick="optimizeAllPhotos()" id="optimizeAllBtn" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-[11px] rounded-lg shadow transition shrink-0">
+                        지금 최적화
+                    </button>
+                </div>
+                <p id="optimizeProgressText" class="text-[10px] text-indigo-500 mt-1.5 hidden"></p>
+            </div>
+
+            <div class="grid grid-cols-3 gap-2">
                 <button onclick="toggleIncompleteFilter(); closeStatsModal();" class="px-3 py-2 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-xl text-xs font-bold text-amber-700 transition">
                     미분류만 보기
                 </button>
                 <button onclick="toggleDuplicateFilter(); closeStatsModal();" class="px-3 py-2 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-xl text-xs font-bold text-rose-700 transition">
                     중복만 보기
+                </button>
+                <button onclick="clearPhotoFilter(); closeStatsModal();" class="px-3 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 transition">
+                    모두 보기
                 </button>
             </div>
         </div>
@@ -6499,6 +6522,100 @@
             if (bytes < 1024) return Math.round(bytes) + ' B';
             if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
             return (bytes / 1024 / 1024).toFixed(1) + ' MB';
+        }
+
+        // Data URL 문자열의 대략적인 바이트 크기를 계산한다 (base64 특성상 약 0.75배).
+        function estimateDataUrlBytes(dataUrl) {
+            return dataUrl ? dataUrl.length * 0.75 : 0;
+        }
+
+        // 이미 등록된 사진들(url/beforeUrl/duringUrl)을 지금 선택한 품질 기준으로 다시 압축한다.
+        // 이미 그 기준보다 작은 사진은 되도록 건드리지 않아 화질이 불필요하게 더 나빠지지 않게 한다.
+        async function optimizeAllPhotos() {
+            if (photoList.length === 0) {
+                showToast("최적화할 사진이 없습니다.");
+                return;
+            }
+
+            const qualitySelect = document.getElementById('optimizeQualitySelect');
+            const qualitySetting = qualitySelect ? qualitySelect.value : 'normal';
+            const COMPRESS_PRESETS = {
+                high:   { maxSide: 2400, quality: 0.9 },
+                normal: { maxSide: 1600, quality: 0.85 },
+                low:    { maxSide: 1000, quality: 0.75 }
+            };
+            const preset = COMPRESS_PRESETS[qualitySetting] || COMPRESS_PRESETS.normal;
+
+            const btn = document.getElementById('optimizeAllBtn');
+            const progressEl = document.getElementById('optimizeProgressText');
+            if (btn) { btn.disabled = true; btn.classList.add('opacity-50', 'cursor-not-allowed'); }
+            if (progressEl) progressEl.classList.remove('hidden');
+
+            saveCurrentInputValues();
+            pushUndoSnapshot();
+
+            // 대상 슬롯을 모두 모은다: 사진마다 최대 3개(url, beforeUrl, duringUrl)
+            const targets = [];
+            photoList.forEach(photo => {
+                ['url', 'beforeUrl', 'duringUrl'].forEach(field => {
+                    if (photo[field]) targets.push({ photo, field });
+                });
+            });
+
+            if (targets.length === 0) {
+                showToast("최적화할 사진이 없습니다.");
+                if (btn) { btn.disabled = false; btn.classList.remove('opacity-50', 'cursor-not-allowed'); }
+                if (progressEl) progressEl.classList.add('hidden');
+                return;
+            }
+
+            const bytesBefore = targets.reduce((sum, t) => sum + estimateDataUrlBytes(t.photo[t.field]), 0);
+            let bytesAfter = 0;
+            let processed = 0;
+            let skipped = 0;
+
+            // compressImage는 콜백 기반이라, Promise로 감싸 순차 처리한다(한꺼번에 다 돌리면
+            // 사진이 많을 때 브라우저가 일시적으로 버벅일 수 있어 하나씩 진행 상황을 보여준다).
+            function compressOne(dataUrl) {
+                return new Promise(resolve => {
+                    compressImage(dataUrl, preset.maxSide, preset.quality, resolve);
+                });
+            }
+
+            for (const target of targets) {
+                const original = target.photo[target.field];
+                const originalBytes = estimateDataUrlBytes(original);
+
+                const compressed = await compressOne(original);
+                const compressedBytes = estimateDataUrlBytes(compressed);
+
+                // 다시 압축한 결과가 오히려 더 크면(이미 충분히 작은 사진이었던 경우) 원본을 유지한다.
+                if (compressedBytes < originalBytes) {
+                    target.photo[target.field] = compressed;
+                    bytesAfter += compressedBytes;
+                } else {
+                    bytesAfter += originalBytes;
+                    skipped++;
+                }
+
+                processed++;
+                if (progressEl) progressEl.textContent = `처리 중... (${processed}/${targets.length})`;
+            }
+
+            saveCurrentInputValues();
+            renderPhotoSheets();
+
+            if (btn) { btn.disabled = false; btn.classList.remove('opacity-50', 'cursor-not-allowed'); }
+            if (progressEl) progressEl.classList.add('hidden');
+
+            const savedBytes = Math.max(0, bytesBefore - bytesAfter);
+            renderStatsModal();
+
+            if (savedBytes < 1024) {
+                showToast(`최적화를 완료했습니다. 이미 충분히 작아 대부분의 사진은 그대로 유지했습니다.`);
+            } else {
+                showToast(`최적화 완료: ${formatBytes(bytesBefore)} → ${formatBytes(bytesAfter)} (${formatBytes(savedBytes)} 절감)`);
+            }
         }
 
         function renderStatsModal() {

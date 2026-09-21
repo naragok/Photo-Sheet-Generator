@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>토목 현장 사진대지 작성 프로그램 V7.4</title>
+    <title>토목 현장 사진대지 작성 프로그램 V7.6</title>
 
     <!-- ===== PWA: Web App Manifest & Favicons ===== -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='512' height='512' viewBox='0 0 512 512'><rect width='512' height='512' rx='100' fill='%230f172a'/><circle cx='256' cy='256' r='220' fill='%231e293b'/><path d='M256 110 C160 110 110 180 110 250 L402 250 C402 180 352 110 256 110 Z' fill='%23f59e0b'/><rect x='80' y='240' width='352' height='32' rx='10' fill='%23d97706'/><rect x='236' y='110' width='40' height='140' fill='%23fbbf24'/><path d='M160 300 H352 V410 H160 Z' fill='%23ffffff' opacity='0.9'/><path d='M180 320 L240 370 L290 335 L332 375 H180 Z' fill='%230f172a'/><circle cx='310' cy='330' r='14' fill='%23f59e0b'/></svg>">
@@ -527,7 +527,7 @@
                     <h1 class="font-black text-lg leading-tight flex items-center gap-2 text-slate-100 tracking-tight truncate">
                         토목 현장 사진대지 작성기
                         <span class="hidden md:inline text-[10px] bg-amber-500/20 text-amber-400 border border-amber-500/40 px-2 py-0.5 rounded-full font-bold tracking-wider uppercase shrink-0">Pro Ultimate</span>
-                        <span class="hidden md:inline text-[10px] bg-slate-700/60 text-slate-300 border border-slate-600/60 px-2 py-0.5 rounded-full font-bold tracking-wider shrink-0">V7.4</span>
+                        <span class="hidden md:inline text-[10px] bg-slate-700/60 text-slate-300 border border-slate-600/60 px-2 py-0.5 rounded-full font-bold tracking-wider shrink-0">V7.6</span>
                     </h1>
                     <p class="hidden sm:block text-[11px] text-slate-400 font-medium truncate">Civil Engineering Site Photo Sheet Generator</p>
                 </div>
@@ -5051,6 +5051,7 @@
                 if (missingFieldFilterActive === 'date' && photo.date) return false;
                 if (missingFieldFilterActive === 'location' && (photo.location || '').trim()) return false;
                 if (missingFieldFilterActive === 'description' && (photo.description || '').trim()) return false;
+                if (missingFieldFilterActive === 'badge' && (photo.badge || '').trim()) return false;
                 if (selectedWorkType && (photo.workType || '').trim() !== selectedWorkType) return false;
                 if (keyword) {
                     const haystack = [photo.workType, photo.subType, photo.location, photo.description, photo.badge, photo.extraValue]
@@ -5325,6 +5326,14 @@
                 return;
             }
 
+            // PDF 생성 라이브러리(html2pdf.js)가 CDN에서 아직 로드되지 않았거나
+            // 네트워크 문제로 로드에 실패한 경우, 그냥 진행하면 안내 없이 조용히
+            // 아무 일도 일어나지 않는다. 이 경우를 미리 감지해 안내한다.
+            if (typeof html2pdf === 'undefined') {
+                showToast("PDF 생성 기능을 아직 불러오지 못했습니다. 인터넷 연결을 확인한 뒤 페이지를 새로고침해 주세요. (그동안은 [인쇄/출력] 메뉴로 PDF 저장이 가능합니다)");
+                return;
+            }
+
             showToast("PDF 파일 생성 중입니다. 잠시만 기다려주세요...");
 
             const clone = container.cloneNode(true);
@@ -5369,14 +5378,20 @@
                 pagebreak:    { mode: ['css', 'legacy'] }
             };
 
-            html2pdf().set(opt).from(clone).save().then(() => {
-                clone.remove();
-                showToast("PDF 파일 다운로드가 완료되었습니다.");
-            }).catch(err => {
-                clone.remove();
-                console.error("PDF 다운로드 오류:", err);
+            try {
+                html2pdf().set(opt).from(clone).save().then(() => {
+                    clone.remove();
+                    showToast("PDF 파일 다운로드가 완료되었습니다.");
+                }).catch(err => {
+                    if (clone.parentNode) clone.remove();
+                    console.error("PDF 다운로드 오류:", err);
+                    showToast("PDF 직접 다운로드 중 오류가 발생했습니다. [인쇄/출력] 메뉴를 이용해 주세요.");
+                });
+            } catch (err) {
+                if (clone.parentNode) clone.remove();
+                console.error("PDF 다운로드 오류(동기):", err);
                 showToast("PDF 직접 다운로드 중 오류가 발생했습니다. [인쇄/출력] 메뉴를 이용해 주세요.");
-            });
+            }
         }
 
         function buildTocHeaderHTML() {
@@ -6505,7 +6520,7 @@
         }
 
         function computePhotoStats() {
-            let missingImage = 0, missingWorkType = 0, missingDate = 0, missingLocation = 0, missingDescription = 0;
+            let missingImage = 0, missingWorkType = 0, missingDate = 0, missingLocation = 0, missingDescription = 0, missingBadge = 0;
             let totalBytes = 0;
 
             photoList.forEach(photo => {
@@ -6514,6 +6529,7 @@
                 if (!hideFieldDate && !photo.date) missingDate++;
                 if (!hideFieldLocation && !(photo.location || '').trim()) missingLocation++;
                 if (!hideFieldDescription && !(photo.description || '').trim()) missingDescription++;
+                if (!(photo.badge || '').trim()) missingBadge++;
 
                 [photo.url, photo.beforeUrl, photo.duringUrl].forEach(u => {
                     if (u) totalBytes += u.length * 0.75;
@@ -6524,7 +6540,7 @@
 
             return {
                 totalPhotos: photoList.length,
-                missingImage, missingWorkType, missingDate, missingLocation, missingDescription,
+                missingImage, missingWorkType, missingDate, missingLocation, missingDescription, missingBadge,
                 totalBytes,
                 duplicateCount: detectDuplicatePhotoIds().size,
                 incompleteCount: detectIncompletePhotoIds().size
@@ -6734,6 +6750,7 @@
             if (!hideFieldDate) rows.push({ key: 'date', label: '날짜 누락', count: stats.missingDate });
             if (!hideFieldLocation) rows.push({ key: 'location', label: '위치 누락', count: stats.missingLocation });
             if (!hideFieldDescription) rows.push({ key: 'description', label: '내용 누락', count: stats.missingDescription });
+            if (showBadge) rows.push({ key: 'badge', label: '태그 없음', count: stats.missingBadge });
             rows.push({ key: 'duplicate', label: '중복 의심 사진', count: stats.duplicateCount });
 
             const listEl = document.getElementById('statsCompletionList');

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>토목 현장 사진대지 작성 프로그램 V8.4</title>
+    <title>토목 현장 사진대지 작성 프로그램 V8.6</title>
 
     <!-- ===== PWA: Web App Manifest & Favicons ===== -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='512' height='512' viewBox='0 0 512 512'><rect width='512' height='512' rx='100' fill='%230f172a'/><circle cx='256' cy='256' r='220' fill='%231e293b'/><path d='M256 110 C160 110 110 180 110 250 L402 250 C402 180 352 110 256 110 Z' fill='%23f59e0b'/><rect x='80' y='240' width='352' height='32' rx='10' fill='%23d97706'/><rect x='236' y='110' width='40' height='140' fill='%23fbbf24'/><path d='M160 300 H352 V410 H160 Z' fill='%23ffffff' opacity='0.9'/><path d='M180 320 L240 370 L290 335 L332 375 H180 Z' fill='%230f172a'/><circle cx='310' cy='330' r='14' fill='%23f59e0b'/></svg>">
@@ -531,7 +531,7 @@
                     <h1 class="font-black text-lg leading-tight flex items-center gap-2 text-slate-100 tracking-tight truncate">
                         토목 현장 사진대지 작성기
                         <span class="hidden md:inline text-[10px] bg-amber-500/20 text-amber-400 border border-amber-500/40 px-2 py-0.5 rounded-full font-bold tracking-wider uppercase shrink-0">Pro Ultimate</span>
-                        <span class="hidden md:inline text-[10px] bg-slate-700/60 text-slate-300 border border-slate-600/60 px-2 py-0.5 rounded-full font-bold tracking-wider shrink-0">V8.4</span>
+                        <span class="hidden md:inline text-[10px] bg-slate-700/60 text-slate-300 border border-slate-600/60 px-2 py-0.5 rounded-full font-bold tracking-wider shrink-0">V8.6</span>
                     </h1>
                     <p class="hidden sm:block text-[11px] text-slate-400 font-medium truncate">Civil Engineering Site Photo Sheet Generator</p>
                 </div>
@@ -2422,6 +2422,7 @@
                 lockExport: document.getElementById('lockExportToggle') ? document.getElementById('lockExportToggle').checked : false,
                 photosPerPage: document.getElementById('photosPerPage') ? document.getElementById('photosPerPage').value : '2',
                 imageFitMode: document.getElementById('imageFitMode') ? document.getElementById('imageFitMode').value : 'cover',
+                imageCompressQuality: document.getElementById('imageCompressQuality') ? document.getElementById('imageCompressQuality').value : 'normal',
                 showApprovalBox: showApprovalBox,
                 approvalCols: approvalCols,
                 showChalkboard: showChalkboard,
@@ -2430,6 +2431,7 @@
                 showCoverPage: showCoverPage,
                 coverStyle: document.getElementById('coverStyleSelect') ? document.getElementById('coverStyleSelect').value : coverStyle,
                 standardWorkTypes: standardWorkTypes,
+                standardPhrases: standardPhrases,
                 completionMode: document.getElementById('completionModeToggle') ? document.getElementById('completionModeToggle').checked : completionMode,
                 siteMapUrl: siteMapUrl,
                 showSiteMap: document.getElementById('showSiteMapToggle') ? document.getElementById('showSiteMapToggle').checked : showSiteMap,
@@ -2531,6 +2533,9 @@
             if (data.imageFitMode && document.getElementById('imageFitMode')) {
                 document.getElementById('imageFitMode').value = data.imageFitMode;
             }
+            if (data.imageCompressQuality && document.getElementById('imageCompressQuality')) {
+                document.getElementById('imageCompressQuality').value = data.imageCompressQuality;
+            }
             if (data.showApprovalBox !== undefined) {
                 showApprovalBox = data.showApprovalBox;
                 if (document.getElementById('showApprovalBoxToggle')) document.getElementById('showApprovalBoxToggle').checked = showApprovalBox;
@@ -2561,6 +2566,9 @@
             }
             if (data.standardWorkTypes !== undefined && Array.isArray(data.standardWorkTypes)) {
                 standardWorkTypes = normalizeWorkTypes(data.standardWorkTypes);
+            }
+            if (data.standardPhrases !== undefined && Array.isArray(data.standardPhrases)) {
+                standardPhrases = data.standardPhrases;
             }
             if (data.completionMode !== undefined) {
                 completionMode = data.completionMode;
@@ -8019,6 +8027,13 @@
             saveCurrentInputValues();
             if (photoList.length === 0) {
                 showToast("내보낼 사진 데이터가 없습니다.");
+                return;
+            }
+
+            // ExcelJS가 CDN에서 아직 로드되지 않았거나 네트워크 문제로 로드에 실패한 경우,
+            // 그냥 진행하면 안내 없이 조용히 아무 일도 일어나지 않는다. 이를 미리 감지해 안내한다.
+            if (typeof ExcelJS === 'undefined') {
+                showToast("엑셀 생성 기능을 아직 불러오지 못했습니다. 인터넷 연결을 확인한 뒤 페이지를 새로고침해 주세요.");
                 return;
             }
 
